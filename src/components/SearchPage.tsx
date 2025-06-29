@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Search, FileText, Image, Calendar, Eye, ZoomIn, ZoomOut, X, Tag, Globe, Lock, User, AlertCircle, Expand, RotateCcw } from 'lucide-react'
+import { Search, FileText, Image, Calendar, Eye, ZoomIn, ZoomOut, X, Tag, Globe, Lock, User, AlertCircle, Expand, RotateCcw, Download } from 'lucide-react'
 import { supabase, DocumentWithProfile } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { Document as PDFDocument, Page, pdfjs } from 'react-pdf'
@@ -173,13 +173,13 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
 
   return (
     <div className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 ${isFullscreen ? 'p-0' : 'p-2 md:p-4'}`}>
-      <div className={`bg-white rounded-lg shadow-2xl flex flex-col ${
+      <div className={`bg-white dark:bg-dark-card rounded-lg shadow-2xl flex flex-col ${
         isFullscreen 
           ? 'w-full h-full rounded-none' 
           : 'w-full max-w-7xl h-[95vh]'
       }`}>
         {/* Header */}
-        <div className="flex items-center justify-between p-3 md:p-4 border-b border-gray-200 bg-gray-50 rounded-t-lg flex-shrink-0">
+        <div className="flex items-center justify-between p-3 md:p-4 border-b border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-dark-search rounded-t-lg flex-shrink-0">
           <div className="flex items-center space-x-2 md:space-x-3 min-w-0 flex-1">
             {doc.file_type === 'pdf' ? (
               <FileText className="w-5 h-5 md:w-6 md:h-6 text-red-500 flex-shrink-0" />
@@ -187,17 +187,17 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
               <Image className="w-5 h-5 md:w-6 md:h-6 text-blue-500 flex-shrink-0" />
             )}
             <div className="min-w-0 flex-1">
-              <h3 className="text-sm md:text-lg font-semibold text-gray-900 truncate">{doc.title}</h3>
-              <div className="flex items-center space-x-1 md:space-x-2 text-xs md:text-sm text-gray-500">
+              <h3 className="text-sm md:text-lg font-semibold text-gray-900 dark:text-dark-text truncate">{doc.title}</h3>
+              <div className="flex items-center space-x-1 md:space-x-2 text-xs md:text-sm text-gray-500 dark:text-gray-400">
                 <span className="hidden sm:inline">{new Date(doc.created_at).toLocaleDateString()}</span>
                 <span className="hidden sm:inline">•</span>
                 <span>{formatFileSize(doc.file_size)}</span>
                 <span className="hidden md:inline">•</span>
                 <div className="hidden md:flex items-center space-x-1">
                   {doc.is_public ? (
-                    <Globe className="w-3 h-3 text-green-600" />
+                    <Globe className="w-3 h-3 text-green-600 dark:text-accent-success" />
                   ) : (
-                    <Lock className="w-3 h-3 text-gray-600" />
+                    <Lock className="w-3 h-3 text-gray-600 dark:text-gray-400" />
                   )}
                   <span>{doc.is_public ? 'Public' : 'Private'}</span>
                 </div>
@@ -218,33 +218,33 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
                 <button
                   onClick={goToPrevPage}
                   disabled={pageNumber <= 1}
-                  className="p-1 md:p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="p-1 md:p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   title="Previous page"
                 >
                   ←
                 </button>
                 
-                <span className="text-xs md:text-sm text-gray-600 bg-white px-2 md:px-3 py-1 rounded border">
+                <span className="text-xs md:text-sm text-gray-600 dark:text-gray-300 bg-white dark:bg-dark-card px-2 md:px-3 py-1 rounded border border-gray-300 dark:border-gray-600">
                   {pageNumber} / {numPages}
                 </span>
                 
                 <button
                   onClick={goToNextPage}
                   disabled={pageNumber >= numPages}
-                  className="p-1 md:p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="p-1 md:p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   title="Next page"
                 >
                   →
                 </button>
                 
-                <div className="w-px h-4 md:h-6 bg-gray-300 mx-1 md:mx-2"></div>
+                <div className="w-px h-4 md:h-6 bg-gray-300 dark:bg-gray-600 mx-1 md:mx-2"></div>
               </>
             )}
             
             {/* Zoom Controls */}
             <button
               onClick={resetZoom}
-              className="p-1 md:p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-md transition-colors"
+              className="p-1 md:p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors"
               title="Reset zoom to 100%"
             >
               <RotateCcw className="w-3 h-3 md:w-4 md:h-4" />
@@ -252,7 +252,7 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
             
             <button
               onClick={handleZoomOut}
-              className="p-1 md:p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-md transition-colors"
+              className="p-1 md:p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors"
               title="Zoom out"
             >
               <ZoomOut className="w-3 h-3 md:w-4 md:h-4" />
@@ -265,15 +265,15 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
                 value={zoomInput}
                 onChange={handleZoomInputChange}
                 onBlur={handleZoomInputBlur}
-                className="w-12 md:w-16 text-xs md:text-sm text-center bg-white px-1 md:px-2 py-1 rounded border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-12 md:w-16 text-xs md:text-sm text-center bg-white dark:bg-dark-card text-gray-900 dark:text-dark-text px-1 md:px-2 py-1 rounded border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 dark:focus:ring-accent-primary focus:border-transparent"
                 title="Enter zoom percentage (25-500%)"
               />
-              <span className="text-xs md:text-sm text-gray-600 ml-1">%</span>
+              <span className="text-xs md:text-sm text-gray-600 dark:text-gray-300 ml-1">%</span>
             </form>
             
             <button
               onClick={handleZoomIn}
-              className="p-1 md:p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-md transition-colors"
+              className="p-1 md:p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors"
               title="Zoom in"
             >
               <ZoomIn className="w-3 h-3 md:w-4 md:h-4" />
@@ -282,7 +282,7 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
             {/* Fullscreen Toggle with Arrow Icon */}
             <button
               onClick={toggleFullscreen}
-              className="p-1 md:p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-md transition-colors"
+              className="p-1 md:p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors"
               title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
             >
               <Expand className="w-3 h-3 md:w-4 md:h-4" />
@@ -293,7 +293,7 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
               <button
                 onClick={handleDirectDownload}
                 disabled={downloading}
-                className="flex items-center space-x-1 px-2 md:px-3 py-1 md:py-2 text-xs md:text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors ml-1 md:ml-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center space-x-1 px-2 md:px-3 py-1 md:py-2 text-xs md:text-sm text-white bg-blue-600 dark:bg-accent-primary hover:bg-blue-700 dark:hover:bg-accent-primary/90 rounded-md transition-colors ml-1 md:ml-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Download PDF directly to your device"
               >
                 {downloading ? (
@@ -312,7 +312,7 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
             
             <button
               onClick={onClose}
-              className="p-1 md:p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-md transition-colors ml-1 md:ml-2"
+              className="p-1 md:p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors ml-1 md:ml-2"
             >
               <X className="w-4 h-4 md:w-5 md:h-5" />
             </button>
@@ -320,7 +320,7 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-auto bg-gray-100 flex items-center justify-center p-2 md:p-4">
+        <div className="flex-1 overflow-auto bg-gray-100 dark:bg-dark-bg flex items-center justify-center p-2 md:p-4">
           {doc.file_type === 'pdf' && doc.file_url ? (
             <div className="bg-white shadow-lg rounded-lg overflow-hidden">
               <PDFDocument
@@ -328,12 +328,12 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
                 onLoadSuccess={onDocumentLoadSuccess}
                 loading={
                   <div className="flex items-center justify-center p-4 md:p-8">
-                    <div className="animate-spin rounded-full h-6 w-6 md:h-8 md:w-8 border-b-2 border-blue-600"></div>
-                    <span className="ml-2 text-gray-600 text-sm md:text-base">Loading PDF...</span>
+                    <div className="animate-spin rounded-full h-6 w-6 md:h-8 md:w-8 border-b-2 border-blue-600 dark:border-accent-primary"></div>
+                    <span className="ml-2 text-gray-600 dark:text-gray-300 text-sm md:text-base">Loading PDF...</span>
                   </div>
                 }
                 error={
-                  <div className="flex items-center justify-center p-4 md:p-8 text-red-600">
+                  <div className="flex items-center justify-center p-4 md:p-8 text-red-600 dark:text-accent-warning">
                     <span className="text-sm md:text-base">Failed to load PDF. Please try downloading the file.</span>
                   </div>
                 }
@@ -347,18 +347,18 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
               </PDFDocument>
             </div>
           ) : (
-            <div className="bg-white rounded-lg p-4 md:p-6 max-w-4xl w-full max-h-full overflow-auto shadow-lg">
-              <h4 className="text-base md:text-lg font-medium text-gray-900 mb-4 border-b pb-2">Extracted Text Content</h4>
+            <div className="bg-white dark:bg-dark-card rounded-lg p-4 md:p-6 max-w-4xl w-full max-h-full overflow-auto shadow-lg">
+              <h4 className="text-base md:text-lg font-medium text-gray-900 dark:text-dark-text mb-4 border-b border-gray-200 dark:border-gray-600 pb-2">Extracted Text Content</h4>
               <div 
-                className="prose prose-sm max-w-none text-gray-700 leading-relaxed"
+                className="prose prose-sm max-w-none text-gray-700 dark:text-gray-300 leading-relaxed"
                 style={{ fontSize: `${scale * 0.875}rem` }}
               >
                 {doc.content ? (
-                  <pre className="whitespace-pre-wrap font-sans bg-gray-50 p-3 md:p-4 rounded border overflow-auto text-sm md:text-base">
+                  <pre className="whitespace-pre-wrap font-sans bg-gray-50 dark:bg-dark-search p-3 md:p-4 rounded border border-gray-200 dark:border-gray-600 overflow-auto text-sm md:text-base">
                     {doc.content}
                   </pre>
                 ) : (
-                  <p className="text-gray-500 italic text-center py-8">No text content available</p>
+                  <p className="text-gray-500 dark:text-gray-400 italic text-center py-8">No text content available</p>
                 )}
               </div>
             </div>
@@ -577,8 +577,8 @@ export function SearchPage() {
   if (initialLoading) {
     return (
       <div className="text-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-        <p className="mt-2 text-gray-600">Loading documents...</p>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-accent-primary mx-auto"></div>
+        <p className="mt-2 text-gray-600 dark:text-gray-300">Loading documents...</p>
       </div>
     )
   }
@@ -587,16 +587,16 @@ export function SearchPage() {
   if (error) {
     return (
       <div className="text-center py-12 px-4">
-        <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">Connection Error</h3>
-        <p className="text-red-600 mb-4 max-w-md mx-auto text-sm">{error}</p>
+        <AlertCircle className="w-12 h-12 text-red-500 dark:text-accent-warning mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-gray-900 dark:text-dark-text mb-2">Connection Error</h3>
+        <p className="text-red-600 dark:text-accent-warning mb-4 max-w-md mx-auto text-sm">{error}</p>
         <button
           onClick={() => {
             setError(null)
             setInitialLoading(true)
             fetchAllDocuments()
           }}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          className="px-4 py-2 bg-blue-600 dark:bg-accent-primary text-white rounded-md hover:bg-blue-700 dark:hover:bg-accent-primary/90 transition-colors"
         >
           Try Again
         </button>
@@ -607,31 +607,31 @@ export function SearchPage() {
   return (
     <>
       <div className="space-y-4 md:space-y-6">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6">
+        <div className="bg-white dark:bg-dark-card rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 p-4 md:p-6">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 md:w-5 md:h-5" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4 md:w-5 md:h-5" />
             <input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search through documents..."
-              className="w-full pl-10 md:pl-10 pr-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base md:text-lg"
+              className="w-full pl-10 md:pl-10 pr-4 py-2 md:py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-dark-search text-gray-900 dark:text-dark-text placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 dark:focus:ring-accent-primary focus:border-transparent text-base md:text-lg"
             />
           </div>
         </div>
 
         {/* Tags Filter */}
         {availableTags.length > 0 && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6">
+          <div className="bg-white dark:bg-dark-card rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 p-4 md:p-6">
             <div className="flex items-center justify-between mb-3 md:mb-4">
               <div className="flex items-center space-x-2">
-                <Tag className="w-4 h-4 text-gray-500" />
-                <span className="text-sm font-medium text-gray-700">Filter by Tags:</span>
+                <Tag className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filter by Tags:</span>
               </div>
               {selectedTags.length > 0 && (
                 <button
                   onClick={clearAllTags}
-                  className="text-sm text-blue-600 hover:text-blue-700 transition-colors"
+                  className="text-sm text-blue-600 dark:text-accent-primary hover:text-blue-700 dark:hover:text-accent-primary/80 transition-colors"
                 >
                   Clear all
                 </button>
@@ -645,8 +645,8 @@ export function SearchPage() {
                   onClick={() => toggleTag(tag)}
                   className={`inline-flex items-center space-x-1 px-3 py-1 rounded-full text-sm transition-colors ${
                     selectedTags.includes(tag)
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      ? 'bg-blue-600 dark:bg-accent-primary text-white'
+                      : 'bg-gray-100 dark:bg-dark-tag-bg text-gray-700 dark:text-dark-tag-text hover:bg-gray-200 dark:hover:bg-dark-tag-alt'
                   }`}
                 >
                   <Tag className="w-3 h-3" />
@@ -656,8 +656,8 @@ export function SearchPage() {
             </div>
             
             {selectedTags.length > 0 && (
-              <div className="mt-3 pt-3 border-t border-gray-200">
-                <p className="text-sm text-gray-600">
+              <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                   Active filters: {selectedTags.join(', ')}
                 </p>
               </div>
@@ -667,15 +667,15 @@ export function SearchPage() {
 
         {loading && (
           <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-2 text-gray-600">Searching...</p>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-accent-primary mx-auto"></div>
+            <p className="mt-2 text-gray-600 dark:text-gray-300">Searching...</p>
           </div>
         )}
 
         {results.length > 0 && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
                 {query ? `Found ${results.length} result${results.length !== 1 ? 's' : ''}` : `Showing ${results.length} document${results.length !== 1 ? 's' : ''}`}
                 {selectedTags.length > 0 && ` with tags: ${selectedTags.join(', ')}`}
               </p>
@@ -687,7 +687,7 @@ export function SearchPage() {
                 <div
                   key={doc.id}
                   onClick={() => handleDocumentClick(doc)}
-                  className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 md:p-4 hover:shadow-md hover:border-blue-300 transition-all duration-200 cursor-pointer group aspect-square flex flex-col"
+                  className="bg-white dark:bg-dark-card rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 p-3 md:p-4 hover:shadow-md hover:border-blue-300 dark:hover:border-accent-primary transition-all duration-200 cursor-pointer group aspect-square flex flex-col"
                 >
                   {/* Header with icons */}
                   <div className="flex items-start justify-between mb-2 md:mb-3">
@@ -701,18 +701,18 @@ export function SearchPage() {
                     
                     <div className="flex items-center space-x-1">
                       {doc.is_public ? (
-                        <Globe className="w-3 h-3 md:w-4 md:h-4 text-green-600" />
+                        <Globe className="w-3 h-3 md:w-4 md:h-4 text-green-600 dark:text-accent-success" />
                       ) : (
-                        <Lock className="w-3 h-3 md:w-4 md:h-4 text-gray-600" />
+                        <Lock className="w-3 h-3 md:w-4 md:h-4 text-gray-600 dark:text-gray-400" />
                       )}
                       {doc.user_id !== user?.id && (
-                        <User className="w-3 h-3 md:w-4 md:h-4 text-blue-600" />
+                        <User className="w-3 h-3 md:w-4 md:h-4 text-blue-600 dark:text-accent-primary" />
                       )}
                     </div>
                   </div>
 
                   {/* Title */}
-                  <h3 className="font-semibold text-gray-900 mb-2 md:mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors text-sm md:text-base">
+                  <h3 className="font-semibold text-gray-900 dark:text-dark-text mb-2 md:mb-3 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-accent-primary transition-colors text-sm md:text-base">
                     {doc.title}
                   </h3>
 
@@ -724,8 +724,8 @@ export function SearchPage() {
                           key={tag}
                           className={`inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs whitespace-nowrap ${
                             selectedTags.includes(tag)
-                              ? 'bg-blue-100 text-blue-800'
-                              : 'bg-gray-100 text-gray-600'
+                              ? 'bg-blue-100 dark:bg-accent-primary/20 text-blue-800 dark:text-accent-primary'
+                              : 'bg-gray-100 dark:bg-dark-tag-bg text-gray-600 dark:text-dark-tag-text'
                           }`}
                         >
                           <Tag className="w-2 h-2 flex-shrink-0" />
@@ -733,7 +733,7 @@ export function SearchPage() {
                         </span>
                       ))}
                       {doc.tags.length > 3 && (
-                        <span className="text-xs text-gray-500 px-2 py-1 whitespace-nowrap">
+                        <span className="text-xs text-gray-500 dark:text-gray-400 px-2 py-1 whitespace-nowrap">
                           +{doc.tags.length - 3}
                         </span>
                       )}
@@ -748,7 +748,7 @@ export function SearchPage() {
                           e.stopPropagation()
                           setSelectedProfile(doc.user_profiles!.user_id)
                         }}
-                        className="text-xs text-blue-600 hover:text-blue-700 hover:underline transition-colors"
+                        className="text-xs text-blue-600 dark:text-accent-primary hover:text-blue-700 dark:hover:text-accent-primary/80 hover:underline transition-colors"
                       >
                         by @{doc.user_profiles.username}
                       </button>
@@ -757,24 +757,24 @@ export function SearchPage() {
 
                   {/* Footer with metadata */}
                   <div className="mt-auto space-y-1 md:space-y-2">
-                    <div className="flex items-center text-xs text-gray-500">
+                    <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
                       <Calendar className="w-3 h-3 mr-1" />
                       <span>{new Date(doc.created_at).toLocaleDateString()}</span>
                     </div>
                     
-                    <div className="flex items-center justify-between text-xs text-gray-500">
+                    <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                       <span>{formatFileSize(doc.file_size)}</span>
                       <span className="capitalize">{doc.file_type}</span>
                     </div>
 
                     {/* Action button - Only View */}
-                    <div className="flex items-center justify-center pt-2 border-t border-gray-100">
+                    <div className="flex items-center justify-center pt-2 border-t border-gray-100 dark:border-gray-600">
                       <button
                         onClick={(e) => {
                           e.stopPropagation()
                           setSelectedDocument(doc)
                         }}
-                        className="flex items-center space-x-1 px-3 py-1 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
+                        className="flex items-center space-x-1 px-3 py-1 text-xs text-blue-600 dark:text-accent-primary hover:text-blue-700 dark:hover:text-accent-primary/80 hover:bg-blue-50 dark:hover:bg-accent-primary/10 rounded transition-colors"
                       >
                         <Eye className="w-3 h-3" />
                         <span>View Document</span>
@@ -789,9 +789,9 @@ export function SearchPage() {
 
         {!loading && results.length === 0 && allDocuments.length === 0 && (
           <div className="text-center py-12 px-4">
-            <Search className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No documents found</h3>
-            <p className="text-gray-600 text-sm md:text-base">
+            <Search className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 dark:text-dark-text mb-2">No documents found</h3>
+            <p className="text-gray-600 dark:text-gray-400 text-sm md:text-base">
               Upload some documents first to start searching.
             </p>
           </div>
@@ -799,9 +799,9 @@ export function SearchPage() {
 
         {!loading && results.length === 0 && allDocuments.length > 0 && (query || selectedTags.length > 0) && (
           <div className="text-center py-12 px-4">
-            <Search className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No results found</h3>
-            <p className="text-gray-600 text-sm md:text-base">
+            <Search className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 dark:text-dark-text mb-2">No results found</h3>
+            <p className="text-gray-600 dark:text-gray-400 text-sm md:text-base">
               Try adjusting your search query or tag filters to find what you're looking for.
             </p>
           </div>

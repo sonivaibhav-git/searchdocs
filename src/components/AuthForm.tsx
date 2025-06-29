@@ -92,7 +92,7 @@ export function AuthForm() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center px-4 transition-colors duration-200">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-dark-bg dark:to-dark-card flex items-center justify-center px-4 transition-colors duration-200">
       {/* Theme Toggle - Positioned absolutely */}
       <div className="absolute top-4 right-4">
         <ThemeToggle size="md" />
@@ -101,25 +101,25 @@ export function AuthForm() {
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <div className="flex justify-center">
-            <Search className="w-12 h-12 text-blue-600 dark:text-blue-400" />
+            <Search className="w-12 h-12 text-blue-600 dark:text-accent-primary" />
           </div>
-          <h2 className="mt-6 text-3xl font-bold text-gray-900 dark:text-white">DeepSearch</h2>
+          <h2 className="mt-6 text-3xl font-bold text-gray-900 dark:text-dark-text">DeepSearch</h2>
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
             {isSignUp ? 'Create your account' : 'Sign in to your account'}
           </p>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 py-8 px-6 shadow-lg rounded-lg border border-gray-200 dark:border-gray-700 transition-colors duration-200">
+        <div className="bg-white dark:bg-dark-card py-8 px-6 shadow-lg rounded-lg border border-gray-200 dark:border-gray-600 transition-colors duration-200">
           <form className="space-y-6" onSubmit={handleSubmit}>
             {error && (
-              <div className="flex items-center space-x-2 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-3 rounded-md border border-red-200 dark:border-red-800">
+              <div className="flex items-center space-x-2 text-red-600 dark:text-accent-warning bg-red-50 dark:bg-red-900/20 p-3 rounded-md border border-red-200 dark:border-red-800">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
                 <span className="text-sm">{error}</span>
               </div>
             )}
 
             {success && (
-              <div className="flex items-center space-x-2 text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 p-3 rounded-md border border-green-200 dark:border-green-800">
+              <div className="flex items-center space-x-2 text-green-600 dark:text-accent-success bg-green-50 dark:bg-green-900/20 p-3 rounded-md border border-green-200 dark:border-green-800">
                 <CheckCircle className="w-4 h-4 flex-shrink-0" />
                 <span className="text-sm">{success}</span>
               </div>
@@ -135,7 +135,7 @@ export function AuthForm() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-500 bg-white dark:bg-dark-search text-gray-900 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-accent-primary focus:border-blue-500 dark:focus:border-accent-primary transition-colors"
                 placeholder="Enter your email"
                 disabled={loading}
               />
@@ -152,7 +152,7 @@ export function AuthForm() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  className="block w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-500 bg-white dark:bg-dark-search text-gray-900 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-accent-primary focus:border-blue-500 dark:focus:border-accent-primary transition-colors"
                   placeholder={isSignUp ? "Create a password (min 6 characters)" : "Enter your password"}
                   disabled={loading}
                 />
@@ -179,7 +179,7 @@ export function AuthForm() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 dark:bg-accent-primary hover:bg-blue-700 dark:hover:bg-accent-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-accent-primary dark:focus:ring-offset-dark-card disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {loading ? (
                 <div className="flex items-center space-x-2">
@@ -196,7 +196,7 @@ export function AuthForm() {
                 type="button"
                 onClick={handleModeSwitch}
                 disabled={loading}
-                className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 transition-colors disabled:opacity-50"
+                className="text-sm text-blue-600 dark:text-accent-primary hover:text-blue-500 dark:hover:text-accent-primary/80 transition-colors disabled:opacity-50"
               >
                 {isSignUp
                   ? 'Already have an account? Sign in'
