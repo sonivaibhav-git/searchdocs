@@ -1,4 +1,4 @@
-# DeepSearch - Document Search Engine
+# SearchDocs - Document Upload, Share, Store and Search Engine
 
 A comprehensive document search engine with OCR capabilities, built with React, Supabase, and Docker.
 
@@ -69,10 +69,10 @@ npm run dev
 
 ```bash
 # Build the image
-docker build -t deepsearch .
+docker build -t SearchDocs .
 
 # Run the container
-docker run -p 3000:80 deepsearch
+docker run -p 3000:80 SearchDocs
 ```
 
 ### Using Docker Compose:
