@@ -177,9 +177,9 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
         isFullscreen 
           ? 'w-full h-full rounded-none' 
           : 'w-full max-w-7xl h-[95vh]'
-      }`}>
+      } transition-colors duration-200`}>
         {/* Header */}
-        <div className="flex items-center justify-between p-3 md:p-4 border-b border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-dark-search rounded-t-lg flex-shrink-0">
+        <div className="flex items-center justify-between p-3 md:p-4 border-b border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-dark-search rounded-t-lg flex-shrink-0 transition-colors duration-200">
           <div className="flex items-center space-x-2 md:space-x-3 min-w-0 flex-1">
             {doc.file_type === 'pdf' ? (
               <FileText className="w-5 h-5 md:w-6 md:h-6 text-red-500 flex-shrink-0" />
@@ -320,7 +320,7 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-auto bg-gray-100 dark:bg-dark-bg flex items-center justify-center p-2 md:p-4">
+        <div className="flex-1 overflow-auto bg-gray-100 dark:bg-dark-bg flex items-center justify-center p-2 md:p-4 transition-colors duration-200">
           {doc.file_type === 'pdf' && doc.file_url ? (
             <div className="bg-white shadow-lg rounded-lg overflow-hidden">
               <PDFDocument
@@ -347,14 +347,14 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
               </PDFDocument>
             </div>
           ) : (
-            <div className="bg-white dark:bg-dark-card rounded-lg p-4 md:p-6 max-w-4xl w-full max-h-full overflow-auto shadow-lg">
+            <div className="bg-white dark:bg-dark-card rounded-lg p-4 md:p-6 max-w-4xl w-full max-h-full overflow-auto shadow-lg transition-colors duration-200">
               <h4 className="text-base md:text-lg font-medium text-gray-900 dark:text-dark-text mb-4 border-b border-gray-200 dark:border-gray-600 pb-2">Extracted Text Content</h4>
               <div 
                 className="prose prose-sm max-w-none text-gray-700 dark:text-gray-300 leading-relaxed"
                 style={{ fontSize: `${scale * 0.875}rem` }}
               >
                 {doc.content ? (
-                  <pre className="whitespace-pre-wrap font-sans bg-gray-50 dark:bg-dark-search p-3 md:p-4 rounded border border-gray-200 dark:border-gray-600 overflow-auto text-sm md:text-base">
+                  <pre className="whitespace-pre-wrap font-sans bg-gray-50 dark:bg-dark-search p-3 md:p-4 rounded border border-gray-200 dark:border-gray-600 overflow-auto text-sm md:text-base transition-colors duration-200">
                     {doc.content}
                   </pre>
                 ) : (
@@ -570,6 +570,10 @@ export function SearchPage() {
     setSelectedTags([])
   }
 
+  const clearSearch = () => {
+    setQuery('')
+  }
+
   const handleDocumentClick = (doc: DocumentWithProfile) => {
     setSelectedDocument(doc)
   }
@@ -607,7 +611,7 @@ export function SearchPage() {
   return (
     <>
       <div className="space-y-4 md:space-y-6">
-        <div className="bg-white dark:bg-dark-card rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 p-4 md:p-6">
+        <div className="bg-white dark:bg-dark-card rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 p-4 md:p-6 transition-colors duration-200">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4 md:w-5 md:h-5" />
             <input
@@ -615,14 +619,23 @@ export function SearchPage() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search through documents..."
-              className="w-full pl-10 md:pl-10 pr-4 py-2 md:py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-dark-search text-gray-900 dark:text-dark-text placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 dark:focus:ring-accent-primary focus:border-transparent text-base md:text-lg"
+              className="w-full pl-10 md:pl-10 pr-12 py-2 md:py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-dark-search text-gray-900 dark:text-dark-text placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 dark:focus:ring-accent-primary focus:border-transparent text-base md:text-lg transition-colors duration-200"
             />
+            {query && (
+              <button
+                onClick={clearSearch}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                title="Clear search"
+              >
+                <X className="w-4 h-4 md:w-5 md:h-5" />
+              </button>
+            )}
           </div>
         </div>
 
         {/* Tags Filter */}
         {availableTags.length > 0 && (
-          <div className="bg-white dark:bg-dark-card rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 p-4 md:p-6">
+          <div className="bg-white dark:bg-dark-card rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 p-4 md:p-6 transition-colors duration-200">
             <div className="flex items-center justify-between mb-3 md:mb-4">
               <div className="flex items-center space-x-2">
                 <Tag className="w-4 h-4 text-gray-500 dark:text-gray-400" />
@@ -716,24 +729,23 @@ export function SearchPage() {
                     {doc.title}
                   </h3>
 
-                  {/* Tags - Updated to match filter tag size */}
+                  {/* Tags - Simplified without background */}
                   {doc.tags && doc.tags.length > 0 && (
                     <div className="flex flex-wrap gap-1 mb-2 md:mb-3 flex-1">
                       {doc.tags.slice(0, 3).map((tag) => (
                         <span
                           key={tag}
-                          className={`inline-flex items-center space-x-1 px-3 py-1 rounded-full text-sm whitespace-nowrap transition-colors ${
+                          className={`text-xs transition-colors ${
                             selectedTags.includes(tag)
-                              ? 'bg-blue-100 dark:bg-accent-primary/20 text-blue-800 dark:text-accent-primary'
-                              : 'bg-gray-100 dark:bg-dark-tag-bg text-gray-600 dark:text-dark-tag-text'
+                              ? 'text-blue-600 dark:text-accent-primary font-medium'
+                              : 'text-gray-600 dark:text-gray-400'
                           }`}
                         >
-                          <Tag className="w-3 h-3 flex-shrink-0" />
-                          <span>{tag}</span>
+                          #{tag}
                         </span>
                       ))}
                       {doc.tags.length > 3 && (
-                        <span className="text-xs text-gray-500 dark:text-gray-400 px-2 py-1 whitespace-nowrap">
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
                           +{doc.tags.length - 3}
                         </span>
                       )}

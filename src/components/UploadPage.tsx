@@ -328,7 +328,7 @@ export function UploadPage() {
   return (
     <>
       <div className="space-y-4 md:space-y-6">
-        <div className="bg-white dark:bg-dark-card rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 p-4 md:p-6">
+        <div className="bg-white dark:bg-dark-card rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 p-4 md:p-6 transition-colors duration-200">
           <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-dark-text mb-4 md:mb-6">Upload Documents</h2>
 
           <div
@@ -351,25 +351,19 @@ export function UploadPage() {
                 <p className="text-sm text-gray-500 dark:text-gray-400">
                   Supports PDF and image files (PNG, JPG, GIF, TIFF, WebP, etc.) up to 50MB each
                 </p>
-                <p className="text-xs text-blue-600 dark:text-accent-primary mt-2">
-                  ℹ️ Files are automatically organized: PDFs → PDF bucket, Images → Image bucket
-                </p>
-                <p className="text-xs text-blue-600 dark:text-accent-primary mt-1">
-                  You'll be able to set privacy and tags for each file before uploading
-                </p>
               </div>
             )}
           </div>
         </div>
 
         {uploadFiles.length > 0 && (
-          <div className="bg-white dark:bg-dark-card rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 p-4 md:p-6">
+          <div className="bg-white dark:bg-dark-card rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 p-4 md:p-6 transition-colors duration-200">
             <h3 className="text-base md:text-lg font-semibold text-gray-900 dark:text-dark-text mb-3 md:mb-4">Upload Progress</h3>
             <div className="space-y-3 md:space-y-4">
               {uploadFiles.map((uploadFile) => (
                 <div
                   key={uploadFile.id}
-                  className="border border-gray-200 dark:border-gray-600 rounded-lg p-3 md:p-4"
+                  className="border border-gray-200 dark:border-gray-600 rounded-lg p-3 md:p-4 bg-gray-50 dark:bg-dark-search transition-colors duration-200"
                 >
                   <div className="flex items-start space-x-3 md:space-x-4">
                     <div className="flex-shrink-0">
@@ -387,15 +381,15 @@ export function UploadPage() {
                             {uploadFile.file.name}
                           </p>
                           <p className="text-xs text-gray-500 dark:text-gray-400">
-                            {formatFileSize(uploadFile.file.size)} • {uploadFile.file.type === 'application/pdf' ? 'PDF Bucket' : 'Image Bucket'}
+                            {formatFileSize(uploadFile.file.size)} • {uploadFile.file.type === 'application/pdf' ? 'PDF' : 'Image'}
                           </p>
                         </div>
                         <div className="flex items-center space-x-2 flex-shrink-0">
                           {uploadFile.status === 'completed' && (
-                            <CheckCircle className="w-4 h-4 text-green-500" />
+                            <CheckCircle className="w-4 h-4 text-green-500 dark:text-accent-success" />
                           )}
                           {uploadFile.status === 'error' && (
-                            <AlertCircle className="w-4 h-4 text-red-500" />
+                            <AlertCircle className="w-4 h-4 text-red-500 dark:text-accent-warning" />
                           )}
                           {uploadFile.status === 'duplicate' && (
                             <AlertCircle className="w-4 h-4 text-orange-500" />
@@ -414,7 +408,7 @@ export function UploadPage() {
                           <div
                             className={`h-2 rounded-full transition-all duration-300 ${
                               uploadFile.status === 'error'
-                                ? 'bg-red-500'
+                                ? 'bg-red-500 dark:bg-accent-warning'
                                 : 'bg-blue-600 dark:bg-accent-primary'
                             }`}
                             style={{ width: `${uploadFile.progress}%` }}
@@ -424,7 +418,7 @@ export function UploadPage() {
 
                       {/* Show settings for completed uploads */}
                       {uploadFile.status === 'completed' && (
-                        <div className="mt-2 p-2 bg-gray-50 dark:bg-dark-search rounded text-xs">
+                        <div className="mt-2 p-2 bg-gray-100 dark:bg-dark-bg rounded text-xs transition-colors duration-200">
                           <div className="flex items-center space-x-4">
                             <div className="flex items-center space-x-1">
                               {uploadFile.isPublic ? (
@@ -469,7 +463,7 @@ export function UploadPage() {
                       )}
 
                       {uploadFile.extractedText && uploadFile.status === 'completed' && (
-                        <div className="mt-2 p-2 bg-gray-50 dark:bg-dark-search rounded text-xs text-gray-600 dark:text-gray-300">
+                        <div className="mt-2 p-2 bg-gray-100 dark:bg-dark-bg rounded text-xs text-gray-600 dark:text-gray-300 transition-colors duration-200">
                           <p className="font-medium mb-1">Extracted text preview:</p>
                           <p className="line-clamp-2">
                             {uploadFile.extractedText.substring(0, 200)}

@@ -173,13 +173,13 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
 
   return (
     <div className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 ${isFullscreen ? 'p-0' : 'p-2 md:p-4'}`}>
-      <div className={`bg-white rounded-lg shadow-2xl flex flex-col ${
+      <div className={`bg-white dark:bg-dark-card rounded-lg shadow-2xl flex flex-col ${
         isFullscreen 
           ? 'w-full h-full rounded-none' 
           : 'w-full max-w-7xl h-[95vh]'
-      }`}>
+      } transition-colors duration-200`}>
         {/* Header */}
-        <div className="flex items-center justify-between p-3 md:p-4 border-b border-gray-200 bg-gray-50 rounded-t-lg flex-shrink-0">
+        <div className="flex items-center justify-between p-3 md:p-4 border-b border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-dark-search rounded-t-lg flex-shrink-0 transition-colors duration-200">
           <div className="flex items-center space-x-2 md:space-x-3 min-w-0 flex-1">
             {doc.file_type === 'pdf' ? (
               <FileText className="w-5 h-5 md:w-6 md:h-6 text-red-500 flex-shrink-0" />
@@ -187,17 +187,17 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
               <Image className="w-5 h-5 md:w-6 md:h-6 text-blue-500 flex-shrink-0" />
             )}
             <div className="min-w-0 flex-1">
-              <h3 className="text-sm md:text-lg font-semibold text-gray-900 truncate">{doc.title}</h3>
-              <div className="flex items-center space-x-1 md:space-x-2 text-xs md:text-sm text-gray-500">
+              <h3 className="text-sm md:text-lg font-semibold text-gray-900 dark:text-dark-text truncate">{doc.title}</h3>
+              <div className="flex items-center space-x-1 md:space-x-2 text-xs md:text-sm text-gray-500 dark:text-gray-400">
                 <span className="hidden sm:inline">{new Date(doc.created_at).toLocaleDateString()}</span>
                 <span className="hidden sm:inline">•</span>
                 <span>{formatFileSize(doc.file_size)}</span>
                 <span className="hidden md:inline">•</span>
                 <div className="hidden md:flex items-center space-x-1">
                   {doc.is_public ? (
-                    <Globe className="w-3 h-3 text-green-600" />
+                    <Globe className="w-3 h-3 text-green-600 dark:text-accent-success" />
                   ) : (
-                    <Lock className="w-3 h-3 text-gray-600" />
+                    <Lock className="w-3 h-3 text-gray-600 dark:text-gray-400" />
                   )}
                   <span>{doc.is_public ? 'Public' : 'Private'}</span>
                 </div>
@@ -218,33 +218,33 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
                 <button
                   onClick={goToPrevPage}
                   disabled={pageNumber <= 1}
-                  className="p-1 md:p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="p-1 md:p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   title="Previous page"
                 >
                   ←
                 </button>
                 
-                <span className="text-xs md:text-sm text-gray-600 bg-white px-2 md:px-3 py-1 rounded border">
+                <span className="text-xs md:text-sm text-gray-600 dark:text-gray-300 bg-white dark:bg-dark-card px-2 md:px-3 py-1 rounded border border-gray-300 dark:border-gray-600">
                   {pageNumber} / {numPages}
                 </span>
                 
                 <button
                   onClick={goToNextPage}
                   disabled={pageNumber >= numPages}
-                  className="p-1 md:p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="p-1 md:p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   title="Next page"
                 >
                   →
                 </button>
                 
-                <div className="w-px h-4 md:h-6 bg-gray-300 mx-1 md:mx-2"></div>
+                <div className="w-px h-4 md:h-6 bg-gray-300 dark:bg-gray-600 mx-1 md:mx-2"></div>
               </>
             )}
             
             {/* Zoom Controls */}
             <button
               onClick={resetZoom}
-              className="p-1 md:p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-md transition-colors"
+              className="p-1 md:p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors"
               title="Reset zoom to 100%"
             >
               <RotateCcw className="w-3 h-3 md:w-4 md:h-4" />
@@ -252,7 +252,7 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
             
             <button
               onClick={handleZoomOut}
-              className="p-1 md:p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-md transition-colors"
+              className="p-1 md:p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors"
               title="Zoom out"
             >
               <ZoomOut className="w-3 h-3 md:w-4 md:h-4" />
@@ -265,15 +265,15 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
                 value={zoomInput}
                 onChange={handleZoomInputChange}
                 onBlur={handleZoomInputBlur}
-                className="w-12 md:w-16 text-xs md:text-sm text-center bg-white px-1 md:px-2 py-1 rounded border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-12 md:w-16 text-xs md:text-sm text-center bg-white dark:bg-dark-card text-gray-900 dark:text-dark-text px-1 md:px-2 py-1 rounded border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 dark:focus:ring-accent-primary focus:border-transparent"
                 title="Enter zoom percentage (25-500%)"
               />
-              <span className="text-xs md:text-sm text-gray-600 ml-1">%</span>
+              <span className="text-xs md:text-sm text-gray-600 dark:text-gray-300 ml-1">%</span>
             </form>
             
             <button
               onClick={handleZoomIn}
-              className="p-1 md:p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-md transition-colors"
+              className="p-1 md:p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors"
               title="Zoom in"
             >
               <ZoomIn className="w-3 h-3 md:w-4 md:h-4" />
@@ -282,7 +282,7 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
             {/* Fullscreen Toggle with Arrow Icon */}
             <button
               onClick={toggleFullscreen}
-              className="p-1 md:p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-md transition-colors"
+              className="p-1 md:p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors"
               title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
             >
               <Expand className="w-3 h-3 md:w-4 md:h-4" />
@@ -293,7 +293,7 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
               <button
                 onClick={handleDirectDownload}
                 disabled={downloading}
-                className="flex items-center space-x-1 px-2 md:px-3 py-1 md:py-2 text-xs md:text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors ml-1 md:ml-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center space-x-1 px-2 md:px-3 py-1 md:py-2 text-xs md:text-sm text-white bg-blue-600 dark:bg-accent-primary hover:bg-blue-700 dark:hover:bg-accent-primary/90 rounded-md transition-colors ml-1 md:ml-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Download PDF directly to your device"
               >
                 {downloading ? (
@@ -312,7 +312,7 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
             
             <button
               onClick={onClose}
-              className="p-1 md:p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-md transition-colors ml-1 md:ml-2"
+              className="p-1 md:p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors ml-1 md:ml-2"
             >
               <X className="w-4 h-4 md:w-5 md:h-5" />
             </button>
@@ -320,7 +320,7 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-auto bg-gray-100 flex items-center justify-center p-2 md:p-4">
+        <div className="flex-1 overflow-auto bg-gray-100 dark:bg-dark-bg flex items-center justify-center p-2 md:p-4 transition-colors duration-200">
           {doc.file_type === 'pdf' && doc.file_url ? (
             <div className="bg-white shadow-lg rounded-lg overflow-hidden">
               <PDFDocument
@@ -328,12 +328,12 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
                 onLoadSuccess={onDocumentLoadSuccess}
                 loading={
                   <div className="flex items-center justify-center p-4 md:p-8">
-                    <div className="animate-spin rounded-full h-6 w-6 md:h-8 md:w-8 border-b-2 border-blue-600"></div>
-                    <span className="ml-2 text-gray-600 text-sm md:text-base">Loading PDF...</span>
+                    <div className="animate-spin rounded-full h-6 w-6 md:h-8 md:w-8 border-b-2 border-blue-600 dark:border-accent-primary"></div>
+                    <span className="ml-2 text-gray-600 dark:text-gray-300 text-sm md:text-base">Loading PDF...</span>
                   </div>
                 }
                 error={
-                  <div className="flex items-center justify-center p-4 md:p-8 text-red-600">
+                  <div className="flex items-center justify-center p-4 md:p-8 text-red-600 dark:text-accent-warning">
                     <span className="text-sm md:text-base">Failed to load PDF. Please try downloading the file.</span>
                   </div>
                 }
@@ -347,18 +347,18 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
               </PDFDocument>
             </div>
           ) : (
-            <div className="bg-white rounded-lg p-4 md:p-6 max-w-4xl w-full max-h-full overflow-auto shadow-lg">
-              <h4 className="text-base md:text-lg font-medium text-gray-900 mb-4 border-b pb-2">Extracted Text Content</h4>
+            <div className="bg-white dark:bg-dark-card rounded-lg p-4 md:p-6 max-w-4xl w-full max-h-full overflow-auto shadow-lg transition-colors duration-200">
+              <h4 className="text-base md:text-lg font-medium text-gray-900 dark:text-dark-text mb-4 border-b border-gray-200 dark:border-gray-600 pb-2">Extracted Text Content</h4>
               <div 
-                className="prose prose-sm max-w-none text-gray-700 leading-relaxed"
+                className="prose prose-sm max-w-none text-gray-700 dark:text-gray-300 leading-relaxed"
                 style={{ fontSize: `${scale * 0.875}rem` }}
               >
                 {doc.content ? (
-                  <pre className="whitespace-pre-wrap font-sans bg-gray-50 p-3 md:p-4 rounded border overflow-auto text-sm md:text-base">
+                  <pre className="whitespace-pre-wrap font-sans bg-gray-50 dark:bg-dark-search p-3 md:p-4 rounded border border-gray-200 dark:border-gray-600 overflow-auto text-sm md:text-base transition-colors duration-200">
                     {doc.content}
                   </pre>
                 ) : (
-                  <p className="text-gray-500 italic text-center py-8">No text content available</p>
+                  <p className="text-gray-500 dark:text-gray-400 italic text-center py-8">No text content available</p>
                 )}
               </div>
             </div>
@@ -410,12 +410,12 @@ function EditDocumentModal({ document: doc, onClose, onSave }: EditDocumentModal
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-2xl w-full max-w-md">
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">Edit Document Settings</h3>
+      <div className="bg-white dark:bg-dark-card rounded-lg shadow-2xl w-full max-w-md transition-colors duration-200">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-600">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text">Edit Document Settings</h3>
           <button
             onClick={onClose}
-            className="p-1 text-gray-400 hover:text-gray-600"
+            className="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
           >
             <X className="w-5 h-5" />
           </button>
@@ -423,15 +423,15 @@ function EditDocumentModal({ document: doc, onClose, onSave }: EditDocumentModal
 
         <div className="p-4 md:p-6 space-y-4 md:space-y-6">
           <div>
-            <h4 className="text-sm font-medium text-gray-900 mb-2 truncate">{doc.title}</h4>
-            <p className="text-sm text-gray-500">
+            <h4 className="text-sm font-medium text-gray-900 dark:text-dark-text mb-2 truncate">{doc.title}</h4>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               {new Date(doc.created_at).toLocaleDateString()} • {formatFileSize(doc.file_size)}
             </p>
           </div>
 
           {/* Privacy Setting */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">Privacy</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Privacy</label>
             <div className="space-y-2">
               <label className="flex items-center space-x-3 cursor-pointer">
                 <input
@@ -441,8 +441,8 @@ function EditDocumentModal({ document: doc, onClose, onSave }: EditDocumentModal
                   className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
                 />
                 <div className="flex items-center space-x-2">
-                  <Lock className="w-4 h-4 text-gray-600" />
-                  <span className="text-sm text-gray-700">Private - Only visible to you</span>
+                  <Lock className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                  <span className="text-sm text-gray-700 dark:text-gray-300">Private - Only visible to you</span>
                 </div>
               </label>
               <label className="flex items-center space-x-3 cursor-pointer">
@@ -453,8 +453,8 @@ function EditDocumentModal({ document: doc, onClose, onSave }: EditDocumentModal
                   className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
                 />
                 <div className="flex items-center space-x-2">
-                  <Globe className="w-4 h-4 text-green-600" />
-                  <span className="text-sm text-gray-700">Public - Visible to all users</span>
+                  <Globe className="w-4 h-4 text-green-600 dark:text-accent-success" />
+                  <span className="text-sm text-gray-700 dark:text-gray-300">Public - Visible to all users</span>
                 </div>
               </label>
             </div>
@@ -462,7 +462,7 @@ function EditDocumentModal({ document: doc, onClose, onSave }: EditDocumentModal
 
           {/* Tags */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Tags</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tags</label>
             <div className="space-y-3">
               <div className="flex items-center space-x-2">
                 <input
@@ -471,11 +471,11 @@ function EditDocumentModal({ document: doc, onClose, onSave }: EditDocumentModal
                   onChange={(e) => setNewTag(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && addTag()}
                   placeholder="Add a tag..."
-                  className="flex-1 px-3 py-1 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="flex-1 px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-dark-search text-gray-900 dark:text-dark-text focus:ring-2 focus:ring-blue-500 dark:focus:ring-accent-primary focus:border-transparent"
                 />
                 <button
                   onClick={addTag}
-                  className="flex items-center space-x-1 px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
+                  className="flex items-center space-x-1 px-3 py-1 bg-blue-600 dark:bg-accent-primary text-white rounded-md hover:bg-blue-700 dark:hover:bg-accent-primary/90 transition-colors text-sm"
                 >
                   <Plus className="w-3 h-3" />
                   <span>Add</span>
@@ -486,13 +486,13 @@ function EditDocumentModal({ document: doc, onClose, onSave }: EditDocumentModal
                 {tags.map((tag) => (
                   <span
                     key={tag}
-                    className="inline-flex items-center space-x-1 px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs"
+                    className="inline-flex items-center space-x-1 px-2 py-1 bg-blue-100 dark:bg-accent-primary/20 text-blue-800 dark:text-accent-primary rounded-full text-xs"
                   >
                     <Tag className="w-3 h-3" />
                     <span>{tag}</span>
                     <button
                       onClick={() => removeTag(tag)}
-                      className="text-blue-600 hover:text-blue-800"
+                      className="text-blue-600 dark:text-accent-primary hover:text-blue-800 dark:hover:text-accent-primary/80"
                     >
                       <X className="w-3 h-3" />
                     </button>
@@ -503,17 +503,17 @@ function EditDocumentModal({ document: doc, onClose, onSave }: EditDocumentModal
           </div>
         </div>
 
-        <div className="flex items-center justify-end space-x-3 p-4 border-t border-gray-200">
+        <div className="flex items-center justify-end space-x-3 p-4 border-t border-gray-200 dark:border-gray-600">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm text-gray-700 hover:text-gray-900 transition-colors"
+            className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-dark-text transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
             disabled={saving}
-            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm disabled:opacity-50"
+            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 dark:bg-accent-primary text-white rounded-md hover:bg-blue-700 dark:hover:bg-accent-primary/90 transition-colors text-sm disabled:opacity-50"
           >
             {saving ? (
               <>
@@ -553,21 +553,21 @@ function DeleteConfirmationModal({ document: doc, onConfirm, onCancel }: DeleteC
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-2xl w-full max-w-md">
+      <div className="bg-white dark:bg-dark-card rounded-lg shadow-2xl w-full max-w-md transition-colors duration-200">
         <div className="p-6">
           <div className="flex items-center space-x-3 mb-4">
             <div className="flex-shrink-0">
-              <AlertTriangle className="w-8 h-8 text-red-500" />
+              <AlertTriangle className="w-8 h-8 text-red-500 dark:text-accent-warning" />
             </div>
             <div className="flex-1">
-              <h3 className="text-lg font-semibold text-gray-900">Delete Document</h3>
-              <p className="text-sm text-gray-600 mt-1">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text">Delete Document</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                 This action cannot be undone.
               </p>
             </div>
           </div>
 
-          <div className="bg-gray-50 rounded-lg p-4 mb-6">
+          <div className="bg-gray-50 dark:bg-dark-search rounded-lg p-4 mb-6 transition-colors duration-200">
             <div className="flex items-center space-x-3">
               {doc.file_type === 'pdf' ? (
                 <FileText className="w-6 h-6 text-red-500 flex-shrink-0" />
@@ -575,15 +575,15 @@ function DeleteConfirmationModal({ document: doc, onConfirm, onCancel }: DeleteC
                 <Image className="w-6 h-6 text-blue-500 flex-shrink-0" />
               )}
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-gray-900 truncate">{doc.title}</p>
-                <p className="text-sm text-gray-500">
+                <p className="font-medium text-gray-900 dark:text-dark-text truncate">{doc.title}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   {new Date(doc.created_at).toLocaleDateString()} • {formatFileSize(doc.file_size)}
                 </p>
               </div>
             </div>
           </div>
 
-          <p className="text-sm text-gray-600 mb-6">
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
             Are you sure you want to delete this document? This will permanently remove the file from storage and all associated data from the database.
           </p>
 
@@ -591,14 +591,14 @@ function DeleteConfirmationModal({ document: doc, onConfirm, onCancel }: DeleteC
             <button
               onClick={onCancel}
               disabled={deleting}
-              className="px-4 py-2 text-sm text-gray-700 hover:text-gray-900 transition-colors disabled:opacity-50"
+              className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-dark-text transition-colors disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               onClick={handleConfirm}
               disabled={deleting}
-              className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-sm disabled:opacity-50"
+              className="flex items-center space-x-2 px-4 py-2 bg-red-600 dark:bg-accent-warning text-white rounded-md hover:bg-red-700 dark:hover:bg-accent-warning/90 transition-colors text-sm disabled:opacity-50"
             >
               {deleting ? (
                 <>
@@ -824,8 +824,8 @@ export function DocumentsPage() {
   if (loading) {
     return (
       <div className="text-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-        <p className="mt-2 text-gray-600">Loading documents...</p>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-accent-primary mx-auto"></div>
+        <p className="mt-2 text-gray-600 dark:text-gray-300">Loading documents...</p>
       </div>
     )
   }
@@ -833,10 +833,10 @@ export function DocumentsPage() {
   return (
     <>
       <div className="space-y-4 md:space-y-6">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6">
+        <div className="bg-white dark:bg-dark-card rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 p-4 md:p-6 transition-colors duration-200">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl md:text-2xl font-bold text-gray-900">Document Dashboard</h2>
-            <div className="text-sm text-gray-600">
+            <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-dark-text">Document Dashboard</h2>
+            <div className="text-sm text-gray-600 dark:text-gray-400">
               {documents.length} document{documents.length !== 1 ? 's' : ''} total
             </div>
           </div>
@@ -844,9 +844,9 @@ export function DocumentsPage() {
 
         {documents.length === 0 ? (
           <div className="text-center py-12 px-4">
-            <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No documents yet</h3>
-            <p className="text-gray-600">Upload your first document to get started</p>
+            <FileText className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 dark:text-dark-text mb-2">No documents yet</h3>
+            <p className="text-gray-600 dark:text-gray-400">Upload your first document to get started</p>
           </div>
         ) : (
           <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -854,7 +854,7 @@ export function DocumentsPage() {
               <div
                 key={doc.id}
                 onClick={() => handleDocumentClick(doc)}
-                className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 md:p-4 hover:shadow-md hover:border-blue-300 transition-all duration-200 cursor-pointer group"
+                className="bg-white dark:bg-dark-card rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 p-3 md:p-4 hover:shadow-md hover:border-blue-300 dark:hover:border-accent-primary transition-all duration-200 cursor-pointer group"
               >
                 <div className="flex items-start justify-between mb-2 md:mb-3">
                   <div className="flex items-center space-x-2 flex-1 min-w-0">
@@ -865,15 +865,15 @@ export function DocumentsPage() {
                     )}
                     <div className="flex items-center space-x-1">
                       {doc.is_public ? (
-                        <Globe className="w-3 h-3 md:w-4 md:h-4 text-green-600" />
+                        <Globe className="w-3 h-3 md:w-4 md:h-4 text-green-600 dark:text-accent-success" />
                       ) : (
-                        <Lock className="w-3 h-3 md:w-4 md:h-4 text-gray-600" />
+                        <Lock className="w-3 h-3 md:w-4 md:h-4 text-gray-600 dark:text-gray-400" />
                       )}
                     </div>
                   </div>
                 </div>
 
-                <h3 className="font-medium text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors text-sm md:text-base">
+                <h3 className="font-medium text-gray-900 dark:text-dark-text mb-2 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-accent-primary transition-colors text-sm md:text-base">
                   {doc.title}
                 </h3>
 
@@ -885,47 +885,46 @@ export function DocumentsPage() {
                         e.stopPropagation()
                         setSelectedProfile(doc.user_profiles!.user_id)
                       }}
-                      className="text-xs text-blue-600 hover:text-blue-700 hover:underline transition-colors"
+                      className="text-xs text-blue-600 dark:text-accent-primary hover:text-blue-700 dark:hover:text-accent-primary/80 hover:underline transition-colors"
                     >
                       by @{doc.user_profiles.username}
                     </button>
                   </div>
                 )}
 
-                {/* Tags */}
+                {/* Tags - Simplified without background */}
                 {doc.tags && doc.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1 mb-2 md:mb-3">
                     {doc.tags.slice(0, 2).map((tag) => (
                       <span
                         key={tag}
-                        className="inline-flex items-center space-x-1 px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs"
+                        className="text-xs text-gray-600 dark:text-gray-400"
                       >
-                        <Tag className="w-2 h-2" />
-                        <span>{tag}</span>
+                        #{tag}
                       </span>
                     ))}
                     {doc.tags.length > 2 && (
-                      <span className="text-xs text-gray-500">+{doc.tags.length - 2} more</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">+{doc.tags.length - 2} more</span>
                     )}
                   </div>
                 )}
 
                 <div className="space-y-1 md:space-y-2 mb-3 md:mb-4">
-                  <div className="flex items-center text-xs md:text-sm text-gray-500">
+                  <div className="flex items-center text-xs md:text-sm text-gray-500 dark:text-gray-400">
                     <Calendar className="w-3 h-3 mr-1" />
                     <span>{new Date(doc.created_at).toLocaleDateString()}</span>
                   </div>
                   
-                  <div className="text-xs md:text-sm text-gray-500">
+                  <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400">
                     Size: {formatFileSize(doc.file_size)}
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-600">
                   <div className="flex items-center space-x-1">
                     <button
                       onClick={(e) => handleEdit(doc, e)}
-                      className="flex items-center space-x-1 px-2 py-1 text-xs text-gray-600 hover:text-gray-700 hover:bg-gray-50 rounded transition-colors"
+                      className="flex items-center space-x-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 rounded transition-colors"
                       title="Edit"
                     >
                       <Edit3 className="w-3 h-3" />
@@ -934,7 +933,7 @@ export function DocumentsPage() {
                     
                     <button
                       onClick={(e) => handleDirectDownload(doc, e)}
-                      className="flex items-center space-x-1 px-2 py-1 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
+                      className="flex items-center space-x-1 px-2 py-1 text-xs text-blue-600 dark:text-accent-primary hover:text-blue-700 dark:hover:text-accent-primary/80 hover:bg-blue-50 dark:hover:bg-accent-primary/10 rounded transition-colors"
                       title="Download directly to device"
                     >
                       <Download className="w-3 h-3" />
@@ -944,7 +943,7 @@ export function DocumentsPage() {
                   
                   <button
                     onClick={(e) => handleDeleteClick(doc, e)}
-                    className="flex items-center space-x-1 px-2 py-1 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                    className="flex items-center space-x-1 px-2 py-1 text-xs text-red-600 dark:text-accent-warning hover:text-red-700 dark:hover:text-accent-warning/80 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
                     title="Delete"
                   >
                     <Trash2 className="w-3 h-3" />
