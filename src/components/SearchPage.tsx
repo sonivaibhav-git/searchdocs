@@ -716,19 +716,19 @@ export function SearchPage() {
                     {doc.title}
                   </h3>
 
-                  {/* Tags */}
+                  {/* Tags - Updated to match filter tag size */}
                   {doc.tags && doc.tags.length > 0 && (
                     <div className="flex flex-wrap gap-1 mb-2 md:mb-3 flex-1">
                       {doc.tags.slice(0, 3).map((tag) => (
                         <span
                           key={tag}
-                          className={`inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs whitespace-nowrap ${
+                          className={`inline-flex items-center space-x-1 px-3 py-1 rounded-full text-sm whitespace-nowrap transition-colors ${
                             selectedTags.includes(tag)
                               ? 'bg-blue-100 dark:bg-accent-primary/20 text-blue-800 dark:text-accent-primary'
                               : 'bg-gray-100 dark:bg-dark-tag-bg text-gray-600 dark:text-dark-tag-text'
                           }`}
                         >
-                          <Tag className="w-2 h-2 flex-shrink-0" />
+                          <Tag className="w-3 h-3 flex-shrink-0" />
                           <span>{tag}</span>
                         </span>
                       ))}

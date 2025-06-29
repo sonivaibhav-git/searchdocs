@@ -235,9 +235,9 @@ export function ProfilePage({ userId, onClose }: ProfilePageProps) {
   if (loading) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl h-[90vh] flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <span className="ml-2 text-gray-600">Loading profile...</span>
+        <div className="bg-white dark:bg-dark-card rounded-lg shadow-2xl w-full max-w-4xl h-[90vh] flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-accent-primary"></div>
+          <span className="ml-2 text-gray-600 dark:text-gray-300">Loading profile...</span>
         </div>
       </div>
     )
@@ -246,14 +246,14 @@ export function ProfilePage({ userId, onClose }: ProfilePageProps) {
   if (!profile) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg shadow-2xl w-full max-w-md p-6">
+        <div className="bg-white dark:bg-dark-card rounded-lg shadow-2xl w-full max-w-md p-6">
           <div className="text-center">
-            <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Profile Not Found</h3>
-            <p className="text-gray-600 mb-4">The requested profile could not be found.</p>
+            <AlertCircle className="w-12 h-12 text-red-500 dark:text-accent-warning mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text mb-2">Profile Not Found</h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">The requested profile could not be found.</p>
             <button
               onClick={onClose}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              className="px-4 py-2 bg-blue-600 dark:bg-accent-primary text-white rounded-md hover:bg-blue-700 dark:hover:bg-accent-primary/90 transition-colors"
             >
               Close
             </button>
@@ -269,16 +269,16 @@ export function ProfilePage({ userId, onClose }: ProfilePageProps) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 md:p-4">
-      <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl h-[95vh] md:h-[90vh] flex flex-col">
+      <div className="bg-white dark:bg-dark-card rounded-lg shadow-2xl w-full max-w-4xl h-[95vh] md:h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200">
+        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-600">
           <div className="flex items-center space-x-2 md:space-x-3 min-w-0 flex-1">
-            <User className="w-6 h-6 md:w-8 md:h-8 text-blue-600 flex-shrink-0" />
+            <User className="w-6 h-6 md:w-8 md:h-8 text-blue-600 dark:text-accent-primary flex-shrink-0" />
             <div className="min-w-0 flex-1">
-              <h2 className="text-lg md:text-2xl font-bold text-gray-900 truncate">
+              <h2 className="text-lg md:text-2xl font-bold text-gray-900 dark:text-dark-text truncate">
                 {isOwnProfile ? 'My Profile' : `${profile.display_name || profile.username}'s Profile`}
               </h2>
-              <p className="text-sm md:text-base text-gray-600 truncate">@{profile.username}</p>
+              <p className="text-sm md:text-base text-gray-600 dark:text-gray-400 truncate">@{profile.username}</p>
             </div>
           </div>
           
@@ -286,7 +286,7 @@ export function ProfilePage({ userId, onClose }: ProfilePageProps) {
             {isOwnProfile && !editing && (
               <button
                 onClick={() => setEditing(true)}
-                className="flex items-center space-x-1 md:space-x-2 px-2 md:px-4 py-1 md:py-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md transition-colors text-sm md:text-base"
+                className="flex items-center space-x-1 md:space-x-2 px-2 md:px-4 py-1 md:py-2 text-blue-600 dark:text-accent-primary hover:text-blue-700 dark:hover:text-accent-primary/80 hover:bg-blue-50 dark:hover:bg-accent-primary/10 rounded-md transition-colors text-sm md:text-base"
               >
                 <Edit3 className="w-3 h-3 md:w-4 md:h-4" />
                 <span className="hidden sm:inline">Edit Profile</span>
@@ -295,7 +295,7 @@ export function ProfilePage({ userId, onClose }: ProfilePageProps) {
             
             <button
               onClick={onClose}
-              className="p-1 md:p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+              className="p-1 md:p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-md transition-colors"
             >
               <X className="w-4 h-4 md:w-5 md:h-5" />
             </button>
@@ -307,18 +307,18 @@ export function ProfilePage({ userId, onClose }: ProfilePageProps) {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
             {/* Profile Info */}
             <div className="lg:col-span-1">
-              <div className="bg-gray-50 rounded-lg p-4 md:p-6">
-                <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-3 md:mb-4">Profile Information</h3>
+              <div className="bg-gray-50 dark:bg-dark-search rounded-lg p-4 md:p-6">
+                <h3 className="text-base md:text-lg font-semibold text-gray-900 dark:text-dark-text mb-3 md:mb-4">Profile Information</h3>
                 
                 {error && (
-                  <div className="flex items-center space-x-2 text-red-600 bg-red-50 p-3 rounded-md border border-red-200 mb-4">
+                  <div className="flex items-center space-x-2 text-red-600 dark:text-accent-warning bg-red-50 dark:bg-red-900/20 p-3 rounded-md border border-red-200 dark:border-red-800 mb-4">
                     <AlertCircle className="w-4 h-4 flex-shrink-0" />
                     <span className="text-sm">{error}</span>
                   </div>
                 )}
 
                 {success && (
-                  <div className="flex items-center space-x-2 text-green-600 bg-green-50 p-3 rounded-md border border-green-200 mb-4">
+                  <div className="flex items-center space-x-2 text-green-600 dark:text-accent-success bg-green-50 dark:bg-green-900/20 p-3 rounded-md border border-green-200 dark:border-green-800 mb-4">
                     <CheckCircle className="w-4 h-4 flex-shrink-0" />
                     <span className="text-sm">{success}</span>
                   </div>
@@ -327,7 +327,7 @@ export function ProfilePage({ userId, onClose }: ProfilePageProps) {
                 <div className="space-y-3 md:space-y-4">
                   {/* Username */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Username
                     </label>
                     {editing && isOwnProfile ? (
@@ -337,16 +337,16 @@ export function ProfilePage({ userId, onClose }: ProfilePageProps) {
                           value={username}
                           onChange={(e) => setUsername(e.target.value)}
                           disabled={!canEdit}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed text-sm md:text-base"
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-dark-card text-gray-900 dark:text-dark-text focus:ring-2 focus:ring-blue-500 dark:focus:ring-accent-primary focus:border-transparent disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed text-sm md:text-base"
                           placeholder="Enter username"
                         />
                         {!canEdit && (
-                          <div className="mt-2 p-2 bg-orange-50 border border-orange-200 rounded-md">
-                            <div className="flex items-center space-x-2 text-orange-700">
+                          <div className="mt-2 p-2 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-md">
+                            <div className="flex items-center space-x-2 text-orange-700 dark:text-orange-400">
                               <Clock className="w-4 h-4" />
                               <span className="text-xs font-medium">Username Edit Restriction</span>
                             </div>
-                            <p className="text-xs text-orange-600 mt-1">
+                            <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
                               {nextEditDate ? (
                                 <>
                                   Next edit available on {nextEditDate.toLocaleDateString()}
@@ -360,19 +360,19 @@ export function ProfilePage({ userId, onClose }: ProfilePageProps) {
                           </div>
                         )}
                         {canEdit && (
-                          <p className="text-xs text-green-600 mt-1">
+                          <p className="text-xs text-green-600 dark:text-accent-success mt-1">
                             ✓ Username can be changed now
                           </p>
                         )}
                       </div>
                     ) : (
-                      <p className="text-gray-900 text-sm md:text-base">@{profile.username}</p>
+                      <p className="text-gray-900 dark:text-dark-text text-sm md:text-base">@{profile.username}</p>
                     )}
                   </div>
 
                   {/* Display Name */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Display Name
                     </label>
                     {editing && isOwnProfile ? (
@@ -380,17 +380,17 @@ export function ProfilePage({ userId, onClose }: ProfilePageProps) {
                         type="text"
                         value={displayName}
                         onChange={(e) => setDisplayName(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm md:text-base"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-dark-card text-gray-900 dark:text-dark-text focus:ring-2 focus:ring-blue-500 dark:focus:ring-accent-primary focus:border-transparent text-sm md:text-base"
                         placeholder="Enter display name"
                       />
                     ) : (
-                      <p className="text-gray-900 text-sm md:text-base">{profile.display_name || 'Not set'}</p>
+                      <p className="text-gray-900 dark:text-dark-text text-sm md:text-base">{profile.display_name || 'Not set'}</p>
                     )}
                   </div>
 
                   {/* Bio */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Bio
                     </label>
                     {editing && isOwnProfile ? (
@@ -398,20 +398,20 @@ export function ProfilePage({ userId, onClose }: ProfilePageProps) {
                         value={bio}
                         onChange={(e) => setBio(e.target.value)}
                         rows={3}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm md:text-base"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-dark-card text-gray-900 dark:text-dark-text focus:ring-2 focus:ring-blue-500 dark:focus:ring-accent-primary focus:border-transparent text-sm md:text-base"
                         placeholder="Tell us about yourself..."
                       />
                     ) : (
-                      <p className="text-gray-900 text-sm md:text-base">{profile.bio || 'No bio available'}</p>
+                      <p className="text-gray-900 dark:text-dark-text text-sm md:text-base">{profile.bio || 'No bio available'}</p>
                     )}
                   </div>
 
                   {/* Member Since */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Member Since
                     </label>
-                    <div className="flex items-center space-x-2 text-gray-900 text-sm md:text-base">
+                    <div className="flex items-center space-x-2 text-gray-900 dark:text-dark-text text-sm md:text-base">
                       <Calendar className="w-4 h-4" />
                       <span>{new Date(profile.created_at).toLocaleDateString()}</span>
                     </div>
@@ -420,10 +420,10 @@ export function ProfilePage({ userId, onClose }: ProfilePageProps) {
                   {/* Last Username Change (for own profile) */}
                   {isOwnProfile && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         Last Username Change
                       </label>
-                      <div className="flex items-center space-x-2 text-gray-900 text-sm md:text-base">
+                      <div className="flex items-center space-x-2 text-gray-900 dark:text-dark-text text-sm md:text-base">
                         <Clock className="w-4 h-4" />
                         <span>{new Date(profile.last_username_change).toLocaleDateString()}</span>
                       </div>
@@ -436,7 +436,7 @@ export function ProfilePage({ userId, onClose }: ProfilePageProps) {
                       <button
                         onClick={handleSave}
                         disabled={saving}
-                        className="flex items-center justify-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 text-sm md:text-base"
+                        className="flex items-center justify-center space-x-2 px-4 py-2 bg-blue-600 dark:bg-accent-primary text-white rounded-md hover:bg-blue-700 dark:hover:bg-accent-primary/90 transition-colors disabled:opacity-50 text-sm md:text-base"
                       >
                         {saving ? (
                           <>
@@ -460,7 +460,7 @@ export function ProfilePage({ userId, onClose }: ProfilePageProps) {
                           setError('')
                           setSuccess('')
                         }}
-                        className="px-4 py-2 text-gray-700 hover:text-gray-900 transition-colors text-sm md:text-base"
+                        className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-dark-text transition-colors text-sm md:text-base"
                       >
                         Cancel
                       </button>
@@ -472,15 +472,15 @@ export function ProfilePage({ userId, onClose }: ProfilePageProps) {
 
             {/* Documents */}
             <div className="lg:col-span-2">
-              <div className="bg-gray-50 rounded-lg p-4 md:p-6">
-                <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-3 md:mb-4">
+              <div className="bg-gray-50 dark:bg-dark-search rounded-lg p-4 md:p-6">
+                <h3 className="text-base md:text-lg font-semibold text-gray-900 dark:text-dark-text mb-3 md:mb-4">
                   {isOwnProfile ? 'My Documents' : 'Public Documents'} ({userDocuments.length})
                 </h3>
                 
                 {userDocuments.length === 0 ? (
                   <div className="text-center py-8">
-                    <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600 text-sm md:text-base">
+                    <FileText className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+                    <p className="text-gray-600 dark:text-gray-400 text-sm md:text-base">
                       {isOwnProfile ? 'No documents uploaded yet' : 'No public documents available'}
                     </p>
                   </div>
@@ -489,7 +489,7 @@ export function ProfilePage({ userId, onClose }: ProfilePageProps) {
                     {userDocuments.map((doc) => (
                       <div
                         key={doc.id}
-                        className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 md:p-4 hover:shadow-md transition-shadow"
+                        className="bg-white dark:bg-dark-card rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 p-3 md:p-4 hover:shadow-md transition-shadow"
                       >
                         <div className="flex items-start justify-between mb-2 md:mb-3">
                           <div className="flex items-center space-x-2">
@@ -500,15 +500,15 @@ export function ProfilePage({ userId, onClose }: ProfilePageProps) {
                             )}
                             <div className="flex items-center space-x-1">
                               {doc.is_public ? (
-                                <Globe className="w-3 h-3 md:w-4 md:h-4 text-green-600" />
+                                <Globe className="w-3 h-3 md:w-4 md:h-4 text-green-600 dark:text-accent-success" />
                               ) : (
-                                <Lock className="w-3 h-3 md:w-4 md:h-4 text-gray-600" />
+                                <Lock className="w-3 h-3 md:w-4 md:h-4 text-gray-600 dark:text-gray-400" />
                               )}
                             </div>
                           </div>
                         </div>
 
-                        <h4 className="font-medium text-gray-900 mb-2 line-clamp-2 text-sm md:text-base">
+                        <h4 className="font-medium text-gray-900 dark:text-dark-text mb-2 line-clamp-2 text-sm md:text-base">
                           {doc.title}
                         </h4>
 
@@ -518,19 +518,19 @@ export function ProfilePage({ userId, onClose }: ProfilePageProps) {
                             {doc.tags.slice(0, 2).map((tag) => (
                               <span
                                 key={tag}
-                                className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs"
+                                className="inline-flex items-center px-2 py-1 bg-blue-100 dark:bg-accent-primary/20 text-blue-800 dark:text-accent-primary rounded-full text-xs"
                               >
                                 <Tag className="w-2 h-2 mr-1" />
                                 <span>{tag}</span>
                               </span>
                             ))}
                             {doc.tags.length > 2 && (
-                              <span className="text-xs text-gray-500">+{doc.tags.length - 2}</span>
+                              <span className="text-xs text-gray-500 dark:text-gray-400">+{doc.tags.length - 2}</span>
                             )}
                           </div>
                         )}
 
-                        <div className="space-y-1 text-xs text-gray-500">
+                        <div className="space-y-1 text-xs text-gray-500 dark:text-gray-400">
                           <div className="flex items-center">
                             <Calendar className="w-3 h-3 mr-1" />
                             <span>{new Date(doc.created_at).toLocaleDateString()}</span>
