@@ -1,6 +1,6 @@
 import React from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import { Search, Upload, LogOut, User, FileText, ChevronDown } from 'lucide-react'
+import { Search, Upload, LogOut, User, FileText, ChevronDown, Globe } from 'lucide-react'
 import { ProfilePage } from './ProfilePage'
 import { ThemeToggle } from './ThemeToggle'
 
@@ -38,8 +38,11 @@ export function Layout({ children, currentPage = 'search', onPageChange }: Layou
             <div className="flex justify-between items-center h-16">
               <div className="flex items-center space-x-8">
                 <div className="flex items-center space-x-2">
-                  <Search className="w-8 h-8 text-blue-600 dark:text-accent-primary" />
-                  <h1 className="text-xl font-bold text-gray-900 dark:text-dark-text">DeepSearch</h1>
+                  <div className="relative">
+                    <Search className="w-8 h-8 text-blue-600 dark:text-accent-primary" />
+                    <Globe className="w-4 h-4 text-blue-600 dark:text-accent-primary absolute -bottom-1 -right-1" />
+                  </div>
+                  <h1 className="text-xl font-bold text-gray-900 dark:text-dark-text">SearchDoc</h1>
                 </div>
                 
                 <nav className="flex space-x-6">
@@ -116,8 +119,11 @@ export function Layout({ children, currentPage = 'search', onPageChange }: Layou
           <div className="px-4 py-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <Search className="w-6 h-6 text-blue-600 dark:text-accent-primary" />
-                <h1 className="text-lg font-bold text-gray-900 dark:text-dark-text">DeepSearch</h1>
+                <div className="relative">
+                  <Search className="w-6 h-6 text-blue-600 dark:text-accent-primary" />
+                  <Globe className="w-3 h-3 text-blue-600 dark:text-accent-primary absolute -bottom-0.5 -right-0.5" />
+                </div>
+                <h1 className="text-lg font-bold text-gray-900 dark:text-dark-text">SearchDoc</h1>
               </div>
               
               <div className="flex items-center space-x-2">

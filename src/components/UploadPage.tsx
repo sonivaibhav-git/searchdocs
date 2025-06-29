@@ -454,7 +454,7 @@ export function UploadPage() {
 
                       {uploadFile.status === 'duplicate' && (
                         <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
-                          ⚠️ This document already exists in your database
+                          This document already exists in your database
                         </p>
                       )}
 

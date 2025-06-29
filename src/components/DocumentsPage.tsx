@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react'
-import { FileText, Image, Calendar, Trash2, Download, X, ZoomIn, ZoomOut, Edit3, Save, Globe, Lock, Tag, Plus, User, Expand, RotateCcw, AlertTriangle } from 'lucide-react'
+import { FileText, Image, Calendar, Trash2, Download, X, ZoomIn, ZoomOut, Edit3, Save, Globe, Lock, Tag, Plus, User, Expand, RotateCcw, AlertTriangle, Share2 } from 'lucide-react'
 import { supabase, DocumentWithProfile } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { Document as PDFDocument, Page, pdfjs } from 'react-pdf'
 import { ProfilePage } from './ProfilePage'
 import { ImageViewer } from './ImageViewer'
+import { ShareModal } from './ShareModal'
 import { useDocumentToast } from './Toast'
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css'
 import 'react-pdf/dist/esm/Page/TextLayer.css'
@@ -24,6 +25,7 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
   const [zoomInput, setZoomInput] = useState<string>('100')
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [downloading, setDownloading] = useState(false)
+  const [showShareModal, setShowShareModal] = useState(false)
 
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
     setNumPages(numPages)
@@ -172,200 +174,219 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
   const viewerDimensions = getViewerDimensions()
 
   return (
-    <div className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 ${isFullscreen ? 'p-0' : 'p-2 md:p-4'}`}>
-      <div className={`bg-white dark:bg-dark-card rounded-lg shadow-2xl flex flex-col ${
-        isFullscreen 
-          ? 'w-full h-full rounded-none' 
-          : 'w-full max-w-7xl h-[95vh]'
-      } transition-colors duration-200`}>
-        {/* Header */}
-        <div className="flex items-center justify-between p-3 md:p-4 border-b border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-dark-search rounded-t-lg flex-shrink-0 transition-colors duration-200">
-          <div className="flex items-center space-x-2 md:space-x-3 min-w-0 flex-1">
-            {doc.file_type === 'pdf' ? (
-              <FileText className="w-5 h-5 md:w-6 md:h-6 text-red-500 flex-shrink-0" />
-            ) : (
-              <Image className="w-5 h-5 md:w-6 md:h-6 text-blue-500 flex-shrink-0" />
-            )}
-            <div className="min-w-0 flex-1">
-              <h3 className="text-sm md:text-lg font-semibold text-gray-900 dark:text-dark-text truncate">{doc.title}</h3>
-              <div className="flex items-center space-x-1 md:space-x-2 text-xs md:text-sm text-gray-500 dark:text-gray-400">
-                <span className="hidden sm:inline">{new Date(doc.created_at).toLocaleDateString()}</span>
-                <span className="hidden sm:inline">•</span>
-                <span>{formatFileSize(doc.file_size)}</span>
-                <span className="hidden md:inline">•</span>
-                <div className="hidden md:flex items-center space-x-1">
-                  {doc.is_public ? (
-                    <Globe className="w-3 h-3 text-green-600 dark:text-accent-success" />
-                  ) : (
-                    <Lock className="w-3 h-3 text-gray-600 dark:text-gray-400" />
+    <>
+      <div className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 ${isFullscreen ? 'p-0' : 'p-2 md:p-4'}`}>
+        <div className={`bg-white dark:bg-dark-card rounded-lg shadow-2xl flex flex-col ${
+          isFullscreen 
+            ? 'w-full h-full rounded-none' 
+            : 'w-full max-w-7xl h-[95vh]'
+        } transition-colors duration-200`}>
+          {/* Header */}
+          <div className="flex items-center justify-between p-3 md:p-4 border-b border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-dark-search rounded-t-lg flex-shrink-0 transition-colors duration-200">
+            <div className="flex items-center space-x-2 md:space-x-3 min-w-0 flex-1">
+              {doc.file_type === 'pdf' ? (
+                <FileText className="w-5 h-5 md:w-6 md:h-6 text-red-500 flex-shrink-0" />
+              ) : (
+                <Image className="w-5 h-5 md:w-6 md:h-6 text-blue-500 flex-shrink-0" />
+              )}
+              <div className="min-w-0 flex-1">
+                <h3 className="text-sm md:text-lg font-semibold text-gray-900 dark:text-dark-text truncate">{doc.title}</h3>
+                <div className="flex items-center space-x-1 md:space-x-2 text-xs md:text-sm text-gray-500 dark:text-gray-400">
+                  <span className="hidden sm:inline">{new Date(doc.created_at).toLocaleDateString()}</span>
+                  <span className="hidden sm:inline">•</span>
+                  <span>{formatFileSize(doc.file_size)}</span>
+                  <span className="hidden md:inline">•</span>
+                  <div className="hidden md:flex items-center space-x-1">
+                    {doc.is_public ? (
+                      <Globe className="w-3 h-3 text-green-600 dark:text-accent-success" />
+                    ) : (
+                      <Lock className="w-3 h-3 text-gray-600 dark:text-gray-400" />
+                    )}
+                    <span>{doc.is_public ? 'Public' : 'Private'}</span>
+                  </div>
+                  {doc.user_profiles && (
+                    <>
+                      <span className="hidden lg:inline">•</span>
+                      <span className="hidden lg:inline">by @{doc.user_profiles.username}</span>
+                    </>
                   )}
-                  <span>{doc.is_public ? 'Public' : 'Private'}</span>
                 </div>
-                {doc.user_profiles && (
-                  <>
-                    <span className="hidden lg:inline">•</span>
-                    <span className="hidden lg:inline">by @{doc.user_profiles.username}</span>
-                  </>
-                )}
               </div>
             </div>
-          </div>
-          
-          <div className="flex items-center space-x-1 md:space-x-2 flex-shrink-0">
-            {/* PDF Navigation Controls */}
-            {doc.file_type === 'pdf' && numPages > 0 && (
-              <>
-                <button
-                  onClick={goToPrevPage}
-                  disabled={pageNumber <= 1}
-                  className="p-1 md:p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Previous page"
-                >
-                  ←
-                </button>
-                
-                <span className="text-xs md:text-sm text-gray-600 dark:text-gray-300 bg-white dark:bg-dark-card px-2 md:px-3 py-1 rounded border border-gray-300 dark:border-gray-600">
-                  {pageNumber} / {numPages}
-                </span>
-                
-                <button
-                  onClick={goToNextPage}
-                  disabled={pageNumber >= numPages}
-                  className="p-1 md:p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Next page"
-                >
-                  →
-                </button>
-                
-                <div className="w-px h-4 md:h-6 bg-gray-300 dark:bg-gray-600 mx-1 md:mx-2"></div>
-              </>
-            )}
             
-            {/* Zoom Controls */}
-            <button
-              onClick={resetZoom}
-              className="p-1 md:p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors"
-              title="Reset zoom to 100%"
-            >
-              <RotateCcw className="w-3 h-3 md:w-4 md:h-4" />
-            </button>
-            
-            <button
-              onClick={handleZoomOut}
-              className="p-1 md:p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors"
-              title="Zoom out"
-            >
-              <ZoomOut className="w-3 h-3 md:w-4 md:h-4" />
-            </button>
-            
-            {/* Editable Zoom Input */}
-            <form onSubmit={handleZoomInputSubmit} className="flex items-center">
-              <input
-                type="text"
-                value={zoomInput}
-                onChange={handleZoomInputChange}
-                onBlur={handleZoomInputBlur}
-                className="w-12 md:w-16 text-xs md:text-sm text-center bg-white dark:bg-dark-card text-gray-900 dark:text-dark-text px-1 md:px-2 py-1 rounded border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 dark:focus:ring-accent-primary focus:border-transparent"
-                title="Enter zoom percentage (25-500%)"
-              />
-              <span className="text-xs md:text-sm text-gray-600 dark:text-gray-300 ml-1">%</span>
-            </form>
-            
-            <button
-              onClick={handleZoomIn}
-              className="p-1 md:p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors"
-              title="Zoom in"
-            >
-              <ZoomIn className="w-3 h-3 md:w-4 md:h-4" />
-            </button>
-
-            {/* Fullscreen Toggle with Arrow Icon */}
-            <button
-              onClick={toggleFullscreen}
-              className="p-1 md:p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors"
-              title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-            >
-              <Expand className="w-3 h-3 md:w-4 md:h-4" />
-            </button>
-            
-            {/* Direct Download Button */}
-            {doc.file_url && (
+            <div className="flex items-center space-x-1 md:space-x-2 flex-shrink-0">
+              {/* PDF Navigation Controls */}
+              {doc.file_type === 'pdf' && numPages > 0 && (
+                <>
+                  <button
+                    onClick={goToPrevPage}
+                    disabled={pageNumber <= 1}
+                    className="p-1 md:p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Previous page"
+                  >
+                    ←
+                  </button>
+                  
+                  <span className="text-xs md:text-sm text-gray-600 dark:text-gray-300 bg-white dark:bg-dark-card px-2 md:px-3 py-1 rounded border border-gray-300 dark:border-gray-600">
+                    {pageNumber} / {numPages}
+                  </span>
+                  
+                  <button
+                    onClick={goToNextPage}
+                    disabled={pageNumber >= numPages}
+                    className="p-1 md:p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Next page"
+                  >
+                    →
+                  </button>
+                  
+                  <div className="w-px h-4 md:h-6 bg-gray-300 dark:bg-gray-600 mx-1 md:mx-2"></div>
+                </>
+              )}
+              
+              {/* Zoom Controls */}
               <button
-                onClick={handleDirectDownload}
-                disabled={downloading}
-                className="flex items-center space-x-1 px-2 md:px-3 py-1 md:py-2 text-xs md:text-sm text-white bg-blue-600 dark:bg-accent-primary hover:bg-blue-700 dark:hover:bg-accent-primary/90 rounded-md transition-colors ml-1 md:ml-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Download PDF directly to your device"
+                onClick={resetZoom}
+                className="p-1 md:p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors"
+                title="Reset zoom to 100%"
               >
-                {downloading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-3 w-3 md:h-4 md:w-4 border-b-2 border-white"></div>
-                    <span className="hidden sm:inline">Downloading...</span>
-                  </>
-                ) : (
-                  <>
-                    <Download className="w-3 h-3 md:w-4 md:h-4" />
-                    <span className="hidden sm:inline">Download</span>
-                  </>
-                )}
+                <RotateCcw className="w-3 h-3 md:w-4 md:h-4" />
               </button>
-            )}
-            
-            <button
-              onClick={onClose}
-              className="p-1 md:p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors ml-1 md:ml-2"
-            >
-              <X className="w-4 h-4 md:w-5 md:h-5" />
-            </button>
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 overflow-auto bg-gray-100 dark:bg-dark-bg flex items-center justify-center p-2 md:p-4 transition-colors duration-200">
-          {doc.file_type === 'pdf' && doc.file_url ? (
-            <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-              <PDFDocument
-                file={doc.file_url}
-                onLoadSuccess={onDocumentLoadSuccess}
-                loading={
-                  <div className="flex items-center justify-center p-4 md:p-8">
-                    <div className="animate-spin rounded-full h-6 w-6 md:h-8 md:w-8 border-b-2 border-blue-600 dark:border-accent-primary"></div>
-                    <span className="ml-2 text-gray-600 dark:text-gray-300 text-sm md:text-base">Loading PDF...</span>
-                  </div>
-                }
-                error={
-                  <div className="flex items-center justify-center p-4 md:p-8 text-red-600 dark:text-accent-warning">
-                    <span className="text-sm md:text-base">Failed to load PDF. Please try downloading the file.</span>
-                  </div>
-                }
+              
+              <button
+                onClick={handleZoomOut}
+                className="p-1 md:p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors"
+                title="Zoom out"
               >
-                <Page
-                  pageNumber={pageNumber}
-                  scale={scale}
-                  renderTextLayer={true}
-                  renderAnnotationLayer={true}
+                <ZoomOut className="w-3 h-3 md:w-4 md:h-4" />
+              </button>
+              
+              {/* Editable Zoom Input */}
+              <form onSubmit={handleZoomInputSubmit} className="flex items-center">
+                <input
+                  type="text"
+                  value={zoomInput}
+                  onChange={handleZoomInputChange}
+                  onBlur={handleZoomInputBlur}
+                  className="w-12 md:w-16 text-xs md:text-sm text-center bg-white dark:bg-dark-card text-gray-900 dark:text-dark-text px-1 md:px-2 py-1 rounded border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 dark:focus:ring-accent-primary focus:border-transparent"
+                  title="Enter zoom percentage (25-500%)"
                 />
-              </PDFDocument>
-            </div>
-          ) : (
-            <div className="bg-white dark:bg-dark-card rounded-lg p-4 md:p-6 max-w-4xl w-full max-h-full overflow-auto shadow-lg transition-colors duration-200">
-              <h4 className="text-base md:text-lg font-medium text-gray-900 dark:text-dark-text mb-4 border-b border-gray-200 dark:border-gray-600 pb-2">Extracted Text Content</h4>
-              <div 
-                className="prose prose-sm max-w-none text-gray-700 dark:text-gray-300 leading-relaxed"
-                style={{ fontSize: `${scale * 0.875}rem` }}
+                <span className="text-xs md:text-sm text-gray-600 dark:text-gray-300 ml-1">%</span>
+              </form>
+              
+              <button
+                onClick={handleZoomIn}
+                className="p-1 md:p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors"
+                title="Zoom in"
               >
-                {doc.content ? (
-                  <pre className="whitespace-pre-wrap font-sans bg-gray-50 dark:bg-dark-search p-3 md:p-4 rounded border border-gray-200 dark:border-gray-600 overflow-auto text-sm md:text-base transition-colors duration-200">
-                    {doc.content}
-                  </pre>
-                ) : (
-                  <p className="text-gray-500 dark:text-gray-400 italic text-center py-8">No text content available</p>
-                )}
-              </div>
+                <ZoomIn className="w-3 h-3 md:w-4 md:h-4" />
+              </button>
+
+              {/* Fullscreen Toggle */}
+              <button
+                onClick={toggleFullscreen}
+                className="p-1 md:p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors"
+                title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+              >
+                <Expand className="w-3 h-3 md:w-4 md:h-4" />
+              </button>
+
+              {/* Share Button */}
+              <button
+                onClick={() => setShowShareModal(true)}
+                className="p-1 md:p-2 text-blue-600 dark:text-accent-primary hover:text-blue-700 dark:hover:text-accent-primary/80 hover:bg-blue-50 dark:hover:bg-accent-primary/10 rounded-md transition-colors"
+                title="Share document"
+              >
+                <Share2 className="w-3 h-3 md:w-4 md:h-4" />
+              </button>
+              
+              {/* Direct Download Button */}
+              {doc.file_url && (
+                <button
+                  onClick={handleDirectDownload}
+                  disabled={downloading}
+                  className="flex items-center space-x-1 px-2 md:px-3 py-1 md:py-2 text-xs md:text-sm text-white bg-blue-600 dark:bg-accent-primary hover:bg-blue-700 dark:hover:bg-accent-primary/90 rounded-md transition-colors ml-1 md:ml-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Download PDF directly to your device"
+                >
+                  {downloading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-3 w-3 md:h-4 md:w-4 border-b-2 border-white"></div>
+                      <span className="hidden sm:inline">Downloading...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-3 h-3 md:w-4 md:h-4" />
+                      <span className="hidden sm:inline">Download</span>
+                    </>
+                  )}
+                </button>
+              )}
+              
+              <button
+                onClick={onClose}
+                className="p-1 md:p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors ml-1 md:ml-2"
+              >
+                <X className="w-4 h-4 md:w-5 md:h-5" />
+              </button>
             </div>
-          )}
+          </div>
+
+          {/* Content */}
+          <div className="flex-1 overflow-auto bg-gray-100 dark:bg-dark-bg flex items-center justify-center p-2 md:p-4 transition-colors duration-200">
+            {doc.file_type === 'pdf' && doc.file_url ? (
+              <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+                <PDFDocument
+                  file={doc.file_url}
+                  onLoadSuccess={onDocumentLoadSuccess}
+                  loading={
+                    <div className="flex items-center justify-center p-4 md:p-8">
+                      <div className="animate-spin rounded-full h-6 w-6 md:h-8 md:w-8 border-b-2 border-blue-600 dark:border-accent-primary"></div>
+                      <span className="ml-2 text-gray-600 dark:text-gray-300 text-sm md:text-base">Loading PDF...</span>
+                    </div>
+                  }
+                  error={
+                    <div className="flex items-center justify-center p-4 md:p-8 text-red-600 dark:text-accent-warning">
+                      <span className="text-sm md:text-base">Failed to load PDF. Please try downloading the file.</span>
+                    </div>
+                  }
+                >
+                  <Page
+                    pageNumber={pageNumber}
+                    scale={scale}
+                    renderTextLayer={true}
+                    renderAnnotationLayer={true}
+                  />
+                </PDFDocument>
+              </div>
+            ) : (
+              <div className="bg-white dark:bg-dark-card rounded-lg p-4 md:p-6 max-w-4xl w-full max-h-full overflow-auto shadow-lg transition-colors duration-200">
+                <h4 className="text-base md:text-lg font-medium text-gray-900 dark:text-dark-text mb-4 border-b border-gray-200 dark:border-gray-600 pb-2">Extracted Text Content</h4>
+                <div 
+                  className="prose prose-sm max-w-none text-gray-700 dark:text-gray-300 leading-relaxed"
+                  style={{ fontSize: `${scale * 0.875}rem` }}
+                >
+                  {doc.content ? (
+                    <pre className="whitespace-pre-wrap font-sans bg-gray-50 dark:bg-dark-search p-3 md:p-4 rounded border border-gray-200 dark:border-gray-600 overflow-auto text-sm md:text-base transition-colors duration-200">
+                      {doc.content}
+                    </pre>
+                  ) : (
+                    <p className="text-gray-500 dark:text-gray-400 italic text-center py-8">No text content available</p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* Share Modal */}
+      {showShareModal && (
+        <ShareModal
+          document={doc}
+          onClose={() => setShowShareModal(false)}
+        />
+      )}
+    </>
   )
 }
 
@@ -634,6 +655,7 @@ export function DocumentsPage() {
   const [editingDocument, setEditingDocument] = useState<DocumentWithProfile | null>(null)
   const [deletingDocument, setDeletingDocument] = useState<DocumentWithProfile | null>(null)
   const [selectedProfile, setSelectedProfile] = useState<string | null>(null)
+  const [showShareModal, setShowShareModal] = useState<DocumentWithProfile | null>(null)
   const { user } = useAuth()
   const documentToast = useDocumentToast()
 
@@ -817,6 +839,11 @@ export function DocumentsPage() {
     setEditingDocument(document)
   }
 
+  const handleShare = (document: DocumentWithProfile, event: React.MouseEvent) => {
+    event.stopPropagation() // Prevent card click
+    setShowShareModal(document)
+  }
+
   const handleDocumentClick = (doc: DocumentWithProfile) => {
     setSelectedDocument(doc)
   }
@@ -857,19 +884,20 @@ export function DocumentsPage() {
                 className="bg-white dark:bg-dark-card rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 p-3 md:p-4 hover:shadow-md hover:border-blue-300 dark:hover:border-accent-primary transition-all duration-200 cursor-pointer group"
               >
                 <div className="flex items-start justify-between mb-2 md:mb-3">
-                  <div className="flex items-center space-x-2 flex-1 min-w-0">
+                  <div className="flex items-center space-x-2">
                     {doc.file_type === 'pdf' ? (
                       <FileText className="w-4 h-4 md:w-5 md:h-5 text-red-500 flex-shrink-0" />
                     ) : (
                       <Image className="w-4 h-4 md:w-5 md:h-5 text-blue-500 flex-shrink-0" />
                     )}
-                    <div className="flex items-center space-x-1">
-                      {doc.is_public ? (
-                        <Globe className="w-3 h-3 md:w-4 md:h-4 text-green-600 dark:text-accent-success" />
-                      ) : (
-                        <Lock className="w-3 h-3 md:w-4 md:h-4 text-gray-600 dark:text-gray-400" />
-                      )}
-                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-1">
+                    {doc.is_public ? (
+                      <Globe className="w-3 h-3 md:w-4 md:h-4 text-green-600 dark:text-accent-success" />
+                    ) : (
+                      <Lock className="w-3 h-3 md:w-4 md:h-4 text-gray-600 dark:text-gray-400" />
+                    )}
                   </div>
                 </div>
 
@@ -932,8 +960,17 @@ export function DocumentsPage() {
                     </button>
                     
                     <button
-                      onClick={(e) => handleDirectDownload(doc, e)}
+                      onClick={(e) => handleShare(doc, e)}
                       className="flex items-center space-x-1 px-2 py-1 text-xs text-blue-600 dark:text-accent-primary hover:text-blue-700 dark:hover:text-accent-primary/80 hover:bg-blue-50 dark:hover:bg-accent-primary/10 rounded transition-colors"
+                      title="Share document"
+                    >
+                      <Share2 className="w-3 h-3" />
+                      <span className="hidden sm:inline">Share</span>
+                    </button>
+                    
+                    <button
+                      onClick={(e) => handleDirectDownload(doc, e)}
+                      className="flex items-center space-x-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 rounded transition-colors"
                       title="Download directly to device"
                     >
                       <Download className="w-3 h-3" />
@@ -988,6 +1025,14 @@ export function DocumentsPage() {
           document={deletingDocument}
           onConfirm={handleDeleteConfirm}
           onCancel={handleDeleteCancel}
+        />
+      )}
+
+      {/* Share Modal */}
+      {showShareModal && (
+        <ShareModal
+          document={showShareModal}
+          onClose={() => setShowShareModal(null)}
         />
       )}
 
