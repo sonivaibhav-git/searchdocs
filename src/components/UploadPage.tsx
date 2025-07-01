@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
-import { Upload, File, Image, AlertCircle, CheckCircle, X, Globe, Lock, Tag, Plus } from 'lucide-react'
+import { Plus, FileText, Image, AlertCircle, CheckCircle, X, Globe, Lock, Tag } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { createWorker } from 'tesseract.js'
@@ -27,7 +27,6 @@ export function UploadPage() {
 
   const checkForDuplicates = async (files: File[]) => {
     try {
-      // Get existing documents for the user
       const { data: existingDocs, error } = await supabase
         .from('documents')
         .select('title, file_size')
@@ -38,13 +37,11 @@ export function UploadPage() {
       const duplicates: string[] = []
       const existingDocsMap = new Map()
       
-      // Create a map of existing documents by title and size
       existingDocs?.forEach(doc => {
         const key = `${doc.title}-${doc.file_size}`
         existingDocsMap.set(key, true)
       })
 
-      // Check each new file against existing documents
       files.forEach(file => {
         const key = `${file.name}-${file.size}`
         if (existingDocsMap.has(key)) {
@@ -65,12 +62,10 @@ export function UploadPage() {
     } else if (fileType.startsWith('image/')) {
       return 'image-documents'
     }
-    // Fallback to pdf-documents for unknown types
     return 'pdf-documents'
   }
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
-    // Check for duplicates first
     const duplicateFiles = await checkForDuplicates(acceptedFiles)
     
     if (duplicateFiles.length > 0) {
@@ -83,14 +78,11 @@ export function UploadPage() {
       status: duplicateFiles.includes(file.name) ? 'duplicate' : 'pending',
       progress: duplicateFiles.includes(file.name) ? 100 : 0,
       error: duplicateFiles.includes(file.name) ? 'Document already exists' : undefined,
-      isPublic: false, // Default to private
-      tags: [], // Default to no tags
+      isPublic: false,
+      tags: [],
     }))
 
-    // Filter out duplicates for confirmation
     const filesToConfirm = newFiles.filter(uploadFile => uploadFile.status !== 'duplicate')
-    
-    // Add duplicates directly to upload files (they won't be processed)
     const duplicateUploadFiles = newFiles.filter(uploadFile => uploadFile.status === 'duplicate')
     setUploadFiles((prev) => [...prev, ...duplicateUploadFiles])
 
@@ -106,23 +98,20 @@ export function UploadPage() {
       'application/pdf': ['.pdf'],
       'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff', '.webp'],
     },
-    maxSize: 50 * 1024 * 1024, // 50MB
+    maxSize: 50 * 1024 * 1024,
   })
 
   const extractTextFromPDF = async (file: File): Promise<string> => {
     try {
-      // For basic PDF text extraction, we'll use a simple approach
-      // In a production environment, you'd want to use a proper PDF parsing library
       const arrayBuffer = await file.arrayBuffer()
       const text = new TextDecoder().decode(arrayBuffer)
       
-      // Extract readable text from the PDF buffer (this is a simplified approach)
       const textMatch = text.match(/\/Length\s+(\d+).*?stream\s*(.*?)\s*endstream/gs)
       if (textMatch) {
         return textMatch.map(match => {
           const streamContent = match.replace(/.*stream\s*/, '').replace(/\s*endstream.*/, '')
           return streamContent.replace(/[^\x20-\x7E]/g, ' ').trim()
-        }).join(' ').substring(0, 1000) // Limit to first 1000 chars
+        }).join(' ').substring(0, 1000)
       }
       
       return `PDF content from ${file.name} - Advanced PDF text extraction would require additional libraries`
@@ -148,7 +137,6 @@ export function UploadPage() {
 
     uploadToast.showUploadStart(file.name)
 
-    // Update status to processing
     setUploadFiles((prev) =>
       prev.map((f) =>
         f.id === uploadFile.id ? { ...f, status: 'processing', progress: 10 } : f
@@ -156,7 +144,6 @@ export function UploadPage() {
     )
 
     try {
-      // Extract text based on file type
       let extractedText = ''
       
       if (file.type === 'application/pdf') {
@@ -181,17 +168,13 @@ export function UploadPage() {
         )
       )
 
-      // Determine the appropriate bucket based on file type
       const bucketName = getBucketForFileType(file.type)
-      
-      // Generate unique file path
       const fileExt = file.name.split('.').pop()
       const fileName = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`
       const filePath = `${user?.id}/${fileName}`
 
       console.log(`Uploading ${file.type} file to bucket: ${bucketName}, path: ${filePath}`)
 
-      // Upload file to the appropriate Supabase Storage bucket
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from(bucketName)
         .upload(filePath, file, {
@@ -212,14 +195,12 @@ export function UploadPage() {
         )
       )
 
-      // Get the public URL for the uploaded file
       const { data: { publicUrl } } = supabase.storage
         .from(bucketName)
         .getPublicUrl(filePath)
 
       console.log('Generated public URL:', publicUrl)
 
-      // Verify the file exists by checking if we can access it
       try {
         const response = await fetch(publicUrl, { method: 'HEAD' })
         if (!response.ok) {
@@ -237,7 +218,6 @@ export function UploadPage() {
         )
       )
 
-      // Save document metadata to database
       const { data: dbData, error: dbError } = await supabase
         .from('documents')
         .insert({
@@ -260,7 +240,6 @@ export function UploadPage() {
 
       if (dbError) {
         console.error('Database insert error:', dbError)
-        // If database insert fails, try to clean up the uploaded file
         try {
           await supabase.storage.from(bucketName).remove([filePath])
         } catch (cleanupError) {
@@ -271,7 +250,6 @@ export function UploadPage() {
 
       console.log('Document saved to database:', dbData)
 
-      // Mark as completed
       setUploadFiles((prev) =>
         prev.map((f) =>
           f.id === uploadFile.id ? { ...f, status: 'completed', progress: 100 } : f
@@ -303,7 +281,6 @@ export function UploadPage() {
     setShowConfirmation(false)
     setPendingFiles([])
     
-    // Add confirmed files to upload list and start processing
     setUploadFiles((prev) => [...prev, ...confirmedFiles])
     confirmedFiles.forEach(processFile)
   }
@@ -329,7 +306,7 @@ export function UploadPage() {
     <>
       <div className="space-y-4 md:space-y-6">
         <div className="bg-white dark:bg-dark-card rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 p-4 md:p-6 transition-colors duration-200">
-          <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-dark-text mb-4 md:mb-6">Upload Documents</h2>
+          <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-dark-text mb-4 md:mb-6">Add Documents</h2>
 
           <div
             {...getRootProps()}
@@ -340,7 +317,7 @@ export function UploadPage() {
             }`}
           >
             <input {...getInputProps()} />
-            <Upload className="mx-auto h-10 w-10 md:h-12 md:w-12 text-gray-400 dark:text-gray-500 mb-3 md:mb-4" />
+            <Plus className="mx-auto h-10 w-10 md:h-12 md:w-12 text-gray-400 dark:text-gray-500 mb-3 md:mb-4" />
             {isDragActive ? (
               <p className="text-base md:text-lg text-blue-600 dark:text-accent-primary">Drop the files here...</p>
             ) : (
@@ -365,18 +342,26 @@ export function UploadPage() {
                   key={uploadFile.id}
                   className="border border-gray-200 dark:border-gray-600 rounded-lg p-3 md:p-4 bg-gray-50 dark:bg-dark-search transition-colors duration-200"
                 >
-                  <div className="flex items-start space-x-3 md:space-x-4">
-                    <div className="flex-shrink-0">
+                  <div className="flex flex-col sm:flex-row sm:items-start space-y-3 sm:space-y-0 sm:space-x-3 md:space-x-4">
+                    <div className="flex items-center space-x-3 sm:space-x-0 sm:flex-col sm:items-center flex-shrink-0">
                       {uploadFile.file.type === 'application/pdf' ? (
-                        <File className="w-6 h-6 md:w-8 md:h-8 text-red-500" />
+                        <FileText className="w-6 h-6 md:w-8 md:h-8 text-red-500" />
                       ) : (
                         <Image className="w-6 h-6 md:w-8 md:h-8 text-blue-500" />
                       )}
+                      <div className="sm:hidden flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 dark:text-dark-text truncate">
+                          {uploadFile.file.name}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {formatFileSize(uploadFile.file.size)} • {uploadFile.file.type === 'application/pdf' ? 'PDF' : 'Image'}
+                        </p>
+                      </div>
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex-1 min-w-0">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-2">
+                        <div className="hidden sm:block flex-1 min-w-0">
                           <p className="text-sm font-medium text-gray-900 dark:text-dark-text truncate">
                             {uploadFile.file.name}
                           </p>
@@ -416,10 +401,9 @@ export function UploadPage() {
                         </div>
                       )}
 
-                      {/* Show settings for completed uploads */}
                       {uploadFile.status === 'completed' && (
                         <div className="mt-2 p-2 bg-gray-100 dark:bg-dark-bg rounded text-xs transition-colors duration-200">
-                          <div className="flex items-center space-x-4">
+                          <div className="flex flex-wrap items-center gap-2 sm:gap-4">
                             <div className="flex items-center space-x-1">
                               {uploadFile.isPublic ? (
                                 <Globe className="w-3 h-3 text-green-600 dark:text-accent-success" />
@@ -461,16 +445,6 @@ export function UploadPage() {
                       {uploadFile.error && uploadFile.status !== 'duplicate' && (
                         <p className="text-xs text-red-600 dark:text-red-400 mt-1">{uploadFile.error}</p>
                       )}
-
-                      {uploadFile.extractedText && uploadFile.status === 'completed' && (
-                        <div className="mt-2 p-2 bg-gray-100 dark:bg-dark-bg rounded text-xs text-gray-600 dark:text-gray-300 transition-colors duration-200">
-                          <p className="font-medium mb-1">Extracted text preview:</p>
-                          <p className="line-clamp-2">
-                            {uploadFile.extractedText.substring(0, 200)}
-                            {uploadFile.extractedText.length > 200 && '...'}
-                          </p>
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>
@@ -480,7 +454,6 @@ export function UploadPage() {
         )}
       </div>
 
-      {/* Upload Confirmation Modal */}
       {showConfirmation && (
         <UploadConfirmationModal
           files={pendingFiles}

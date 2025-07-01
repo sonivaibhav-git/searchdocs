@@ -1,6 +1,6 @@
 import React from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import { Search, Upload, LogOut, User, FileText, ChevronDown, Globe } from 'lucide-react'
+import { Search, Plus, LogOut, User, FileText, ChevronDown, Globe } from 'lucide-react'
 import { ProfilePage } from './ProfilePage'
 import { ThemeToggle } from './ThemeToggle'
 
@@ -25,7 +25,7 @@ export function Layout({ children, currentPage = 'search', onPageChange }: Layou
 
   const navItems = [
     { id: 'search', label: 'Search', icon: Search },
-    { id: 'upload', label: 'Upload', icon: Upload },
+    { id: 'upload', label: 'Add Doc', icon: Plus },
     { id: 'documents', label: 'My Documents', icon: FileText },
   ]
 
@@ -38,10 +38,7 @@ export function Layout({ children, currentPage = 'search', onPageChange }: Layou
             <div className="flex justify-between items-center h-16">
               <div className="flex items-center space-x-8">
                 <div className="flex items-center space-x-2">
-                  <div className="relative">
-                    <Search className="w-8 h-8 text-blue-600 dark:text-accent-primary" />
-                    <Globe className="w-4 h-4 text-blue-600 dark:text-accent-primary absolute -bottom-1 -right-1" />
-                  </div>
+                  <Search className="w-8 h-8 text-blue-600 dark:text-accent-primary" />
                   <h1 className="text-xl font-bold text-gray-900 dark:text-dark-text">SearchDoc</h1>
                 </div>
                 
@@ -67,10 +64,8 @@ export function Layout({ children, currentPage = 'search', onPageChange }: Layou
               </div>
 
               <div className="flex items-center space-x-3">
-                {/* Theme Toggle */}
                 <ThemeToggle size="md" />
                 
-                {/* User Menu */}
                 <div className="relative">
                   <button
                     onClick={() => setShowDropdown(!showDropdown)}
@@ -119,18 +114,13 @@ export function Layout({ children, currentPage = 'search', onPageChange }: Layou
           <div className="px-4 py-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <div className="relative">
-                  <Search className="w-6 h-6 text-blue-600 dark:text-accent-primary" />
-                  <Globe className="w-3 h-3 text-blue-600 dark:text-accent-primary absolute -bottom-0.5 -right-0.5" />
-                </div>
+                <Search className="w-6 h-6 text-blue-600 dark:text-accent-primary" />
                 <h1 className="text-lg font-bold text-gray-900 dark:text-dark-text">SearchDoc</h1>
               </div>
               
               <div className="flex items-center space-x-2">
-                {/* Mobile Theme Toggle */}
                 <ThemeToggle size="sm" />
                 
-                {/* Mobile User Menu */}
                 <div className="relative">
                   <button
                     onClick={() => setShowDropdown(!showDropdown)}
@@ -176,7 +166,6 @@ export function Layout({ children, currentPage = 'search', onPageChange }: Layou
           </div>
         </header>
 
-        {/* Click outside to close dropdown */}
         {showDropdown && (
           <div 
             className="fixed inset-0 z-30" 
@@ -188,7 +177,7 @@ export function Layout({ children, currentPage = 'search', onPageChange }: Layou
           {children}
         </main>
 
-        {/* Mobile Bottom Navigation - Fixed with proper z-index */}
+        {/* Mobile Bottom Navigation */}
         <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-dark-card border-t border-gray-200 dark:border-gray-700 md:hidden z-50 safe-area-inset-bottom transition-colors duration-200">
           <div className="grid grid-cols-3 h-16">
             {navItems.map((item) => {
@@ -212,7 +201,6 @@ export function Layout({ children, currentPage = 'search', onPageChange }: Layou
         </nav>
       </div>
 
-      {/* Profile Modal */}
       {showProfile && (
         <ProfilePage
           onClose={() => setShowProfile(false)}

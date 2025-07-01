@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Search, FileText, Image, Calendar, Eye, ZoomIn, ZoomOut, X, Tag, Globe, Lock, User, AlertCircle, Expand, RotateCcw, Download, Share2 } from 'lucide-react'
+import { Search, FileText, Image, Calendar, Eye, ZoomIn, ZoomOut, X, Tag, Globe, Lock, User, AlertCircle, Expand, RotateCcw, Download, Share2, ChevronLeft, ChevronRight } from 'lucide-react'
 import { supabase, DocumentWithProfile } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { Document as PDFDocument, Page, pdfjs } from 'react-pdf'
@@ -10,7 +10,6 @@ import { useSearchToast } from './Toast'
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css'
 import 'react-pdf/dist/esm/Page/TextLayer.css'
 
-// Set up PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`
 
 interface DocumentViewerProps {
@@ -21,6 +20,7 @@ interface DocumentViewerProps {
 function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
   const [numPages, setNumPages] = useState<number>(0)
   const [pageNumber, setPageNumber] = useState<number>(1)
+  const [pageInput, setPageInput] = useState<string>('1')
   const [scale, setScale] = useState<number>(1.0)
   const [zoomInput, setZoomInput] = useState<string>('100')
   const [isFullscreen, setIsFullscreen] = useState(false)
@@ -59,7 +59,6 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
     if (!isNaN(numValue) && numValue >= 25 && numValue <= 500) {
       setScale(numValue / 100)
     } else {
-      // Reset to current scale if invalid
       setZoomInput(Math.round(scale * 100).toString())
     }
   }
@@ -68,9 +67,26 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
     handleZoomInputSubmit({ preventDefault: () => {} } as React.FormEvent)
   }
 
+  const handlePageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPageInput(e.target.value)
+  }
+
+  const handlePageInputSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    const numValue = parseInt(pageInput)
+    if (!isNaN(numValue) && numValue >= 1 && numValue <= numPages) {
+      setPageNumber(numValue)
+    } else {
+      setPageInput(pageNumber.toString())
+    }
+  }
+
+  const handlePageInputBlur = () => {
+    handlePageInputSubmit({ preventDefault: () => {} } as React.FormEvent)
+  }
+
   const toggleFullscreen = () => {
     if (!isFullscreen) {
-      // Enter fullscreen
       const element = document.documentElement
       if (element.requestFullscreen) {
         element.requestFullscreen()
@@ -80,7 +96,6 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
         (element as any).msRequestFullscreen()
       }
     } else {
-      // Exit fullscreen
       if (document.exitFullscreen) {
         document.exitFullscreen()
       } else if ((document as any).webkitExitFullscreen) {
@@ -92,7 +107,6 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
     setIsFullscreen(!isFullscreen)
   }
 
-  // Listen for fullscreen changes
   useEffect(() => {
     const handleFullscreenChange = () => {
       const isCurrentlyFullscreen = !!(
@@ -103,7 +117,6 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
       setIsFullscreen(isCurrentlyFullscreen)
     }
 
-    // Check if document and addEventListener exist before using them
     if (typeof document !== 'undefined' && document.addEventListener) {
       document.addEventListener('fullscreenchange', handleFullscreenChange)
       document.addEventListener('webkitfullscreenchange', handleFullscreenChange)
@@ -118,11 +131,15 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
   }, [])
 
   const goToPrevPage = () => {
-    setPageNumber(prev => Math.max(prev - 1, 1))
+    const newPage = Math.max(pageNumber - 1, 1)
+    setPageNumber(newPage)
+    setPageInput(newPage.toString())
   }
 
   const goToNextPage = () => {
-    setPageNumber(prev => Math.min(prev + 1, numPages))
+    const newPage = Math.min(pageNumber + 1, numPages)
+    setPageNumber(newPage)
+    setPageInput(newPage.toString())
   }
 
   const handleDirectDownload = async () => {
@@ -130,31 +147,38 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
     
     setDownloading(true)
     try {
-      // Fetch the PDF as a blob
       const response = await fetch(doc.file_url)
       if (!response.ok) throw new Error('Failed to fetch PDF')
       
       const blob = await response.blob()
-      
-      // Create a download link
       const url = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
       link.download = doc.title || 'document.pdf'
       
-      // Trigger download
       document.body.appendChild(link)
       link.click()
-      
-      // Cleanup
       document.body.removeChild(link)
       window.URL.revokeObjectURL(url)
     } catch (error) {
       console.error('Download failed:', error)
-      // Fallback to opening in new tab
       window.open(doc.file_url, '_blank')
     } finally {
       setDownloading(false)
+    }
+  }
+
+  const handleScroll = (e: React.WheelEvent) => {
+    if (e.ctrlKey || e.metaKey) return
+    
+    if (e.deltaY > 0 && pageNumber < numPages) {
+      const newPage = pageNumber + 1
+      setPageNumber(newPage)
+      setPageInput(newPage.toString())
+    } else if (e.deltaY < 0 && pageNumber > 1) {
+      const newPage = pageNumber - 1
+      setPageNumber(newPage)
+      setPageInput(newPage.toString())
     }
   }
 
@@ -182,15 +206,15 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
             : 'w-full max-w-7xl h-[95vh]'
         } transition-colors duration-200`}>
           {/* Header */}
-          <div className="flex items-center justify-between p-3 md:p-4 border-b border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-dark-search rounded-t-lg flex-shrink-0 transition-colors duration-200">
+          <div className="flex items-center justify-between p-2 sm:p-3 md:p-4 border-b border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-dark-search rounded-t-lg flex-shrink-0 transition-colors duration-200">
             <div className="flex items-center space-x-2 md:space-x-3 min-w-0 flex-1">
               {doc.file_type === 'pdf' ? (
-                <FileText className="w-5 h-5 md:w-6 md:h-6 text-red-500 flex-shrink-0" />
+                <FileText className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-red-500 flex-shrink-0" />
               ) : (
-                <Image className="w-5 h-5 md:w-6 md:h-6 text-blue-500 flex-shrink-0" />
+                <Image className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-blue-500 flex-shrink-0" />
               )}
               <div className="min-w-0 flex-1">
-                <h3 className="text-sm md:text-lg font-semibold text-gray-900 dark:text-dark-text truncate">{doc.title}</h3>
+                <h3 className="text-xs sm:text-sm md:text-lg font-semibold text-gray-900 dark:text-dark-text truncate">{doc.title}</h3>
                 <div className="flex items-center space-x-1 md:space-x-2 text-xs md:text-sm text-gray-500 dark:text-gray-400">
                   <span className="hidden sm:inline">{new Date(doc.created_at).toLocaleDateString()}</span>
                   <span className="hidden sm:inline">•</span>
@@ -215,36 +239,6 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
             </div>
             
             <div className="flex items-center space-x-1 md:space-x-2 flex-shrink-0">
-              {/* PDF Navigation Controls */}
-              {doc.file_type === 'pdf' && numPages > 0 && (
-                <>
-                  <button
-                    onClick={goToPrevPage}
-                    disabled={pageNumber <= 1}
-                    className="p-1 md:p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Previous page"
-                  >
-                    ←
-                  </button>
-                  
-                  <span className="text-xs md:text-sm text-gray-600 dark:text-gray-300 bg-white dark:bg-dark-card px-2 md:px-3 py-1 rounded border border-gray-300 dark:border-gray-600">
-                    {pageNumber} / {numPages}
-                  </span>
-                  
-                  <button
-                    onClick={goToNextPage}
-                    disabled={pageNumber >= numPages}
-                    className="p-1 md:p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Next page"
-                  >
-                    →
-                  </button>
-                  
-                  <div className="w-px h-4 md:h-6 bg-gray-300 dark:bg-gray-600 mx-1 md:mx-2"></div>
-                </>
-              )}
-              
-              {/* Zoom Controls */}
               <button
                 onClick={resetZoom}
                 className="p-1 md:p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors"
@@ -261,14 +255,13 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
                 <ZoomOut className="w-3 h-3 md:w-4 md:h-4" />
               </button>
               
-              {/* Editable Zoom Input */}
               <form onSubmit={handleZoomInputSubmit} className="flex items-center">
                 <input
                   type="text"
                   value={zoomInput}
                   onChange={handleZoomInputChange}
                   onBlur={handleZoomInputBlur}
-                  className="w-12 md:w-16 text-xs md:text-sm text-center bg-white dark:bg-dark-card text-gray-900 dark:text-dark-text px-1 md:px-2 py-1 rounded border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 dark:focus:ring-accent-primary focus:border-transparent"
+                  className="w-8 sm:w-12 md:w-16 text-xs md:text-sm text-center bg-white dark:bg-dark-card text-gray-900 dark:text-dark-text px-1 md:px-2 py-1 rounded border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 dark:focus:ring-accent-primary focus:border-transparent"
                   title="Enter zoom percentage (25-500%)"
                 />
                 <span className="text-xs md:text-sm text-gray-600 dark:text-gray-300 ml-1">%</span>
@@ -282,7 +275,6 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
                 <ZoomIn className="w-3 h-3 md:w-4 md:h-4" />
               </button>
 
-              {/* Fullscreen Toggle with Arrow Icon */}
               <button
                 onClick={toggleFullscreen}
                 className="p-1 md:p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors"
@@ -291,7 +283,6 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
                 <Expand className="w-3 h-3 md:w-4 md:h-4" />
               </button>
 
-              {/* Share Button */}
               <button
                 onClick={() => setShowShareModal(true)}
                 className="p-1 md:p-2 text-blue-600 dark:text-accent-primary hover:text-blue-700 dark:hover:text-accent-primary/80 hover:bg-blue-50 dark:hover:bg-accent-primary/10 rounded-md transition-colors"
@@ -300,12 +291,11 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
                 <Share2 className="w-3 h-3 md:w-4 md:h-4" />
               </button>
               
-              {/* Direct Download Button */}
               {doc.file_url && (
                 <button
                   onClick={handleDirectDownload}
                   disabled={downloading}
-                  className="flex items-center space-x-1 px-2 md:px-3 py-1 md:py-2 text-xs md:text-sm text-white bg-blue-600 dark:bg-accent-primary hover:bg-blue-700 dark:hover:bg-accent-primary/90 rounded-md transition-colors ml-1 md:ml-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center space-x-1 px-2 md:px-3 py-1 md:py-2 text-xs md:text-sm text-white bg-blue-600 dark:bg-accent-primary hover:bg-blue-700 dark:hover:bg-accent-primary/90 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   title="Download PDF directly to your device"
                 >
                   {downloading ? (
@@ -332,32 +322,73 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-auto bg-gray-100 dark:bg-dark-bg flex items-center justify-center p-2 md:p-4 transition-colors duration-200">
+          <div className="flex-1 overflow-hidden bg-gray-100 dark:bg-dark-bg flex flex-col items-center justify-center p-2 md:p-4 transition-colors duration-200 relative">
             {doc.file_type === 'pdf' && doc.file_url ? (
-              <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-                <PDFDocument
-                  file={doc.file_url}
-                  onLoadSuccess={onDocumentLoadSuccess}
-                  loading={
-                    <div className="flex items-center justify-center p-4 md:p-8">
-                      <div className="animate-spin rounded-full h-6 w-6 md:h-8 md:w-8 border-b-2 border-blue-600 dark:border-accent-primary"></div>
-                      <span className="ml-2 text-gray-600 dark:text-gray-300 text-sm md:text-base">Loading PDF...</span>
-                    </div>
-                  }
-                  error={
-                    <div className="flex items-center justify-center p-4 md:p-8 text-red-600 dark:text-accent-warning">
-                      <span className="text-sm md:text-base">Failed to load PDF. Please try downloading the file.</span>
-                    </div>
-                  }
+              <>
+                <div 
+                  className="bg-white shadow-lg rounded-lg overflow-hidden flex-1 flex items-center justify-center w-full"
+                  onWheel={handleScroll}
                 >
-                  <Page
-                    pageNumber={pageNumber}
-                    scale={scale}
-                    renderTextLayer={true}
-                    renderAnnotationLayer={true}
-                  />
-                </PDFDocument>
-              </div>
+                  <PDFDocument
+                    file={doc.file_url}
+                    onLoadSuccess={onDocumentLoadSuccess}
+                    loading={
+                      <div className="flex items-center justify-center p-4 md:p-8">
+                        <div className="animate-spin rounded-full h-6 w-6 md:h-8 md:w-8 border-b-2 border-blue-600 dark:border-accent-primary"></div>
+                        <span className="ml-2 text-gray-600 dark:text-gray-300 text-sm md:text-base">Loading PDF...</span>
+                      </div>
+                    }
+                    error={
+                      <div className="flex items-center justify-center p-4 md:p-8 text-red-600 dark:text-accent-warning">
+                        <span className="text-sm md:text-base">Failed to load PDF. Please try downloading the file.</span>
+                      </div>
+                    }
+                  >
+                    <Page
+                      pageNumber={pageNumber}
+                      scale={scale}
+                      renderTextLayer={true}
+                      renderAnnotationLayer={true}
+                      width={Math.min(viewerDimensions.width, window.innerWidth - 32)}
+                    />
+                  </PDFDocument>
+                </div>
+
+                {numPages > 0 && (
+                  <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center space-x-2 bg-black bg-opacity-75 text-white px-3 py-2 rounded-lg">
+                    <button
+                      onClick={goToPrevPage}
+                      disabled={pageNumber <= 1}
+                      className="p-1 hover:bg-white hover:bg-opacity-20 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Previous page"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    
+                    <form onSubmit={handlePageInputSubmit} className="flex items-center">
+                      <input
+                        type="text"
+                        value={pageInput}
+                        onChange={handlePageInputChange}
+                        onBlur={handlePageInputBlur}
+                        className="w-8 sm:w-12 text-xs sm:text-sm text-center bg-white bg-opacity-20 text-white px-1 py-1 rounded border-0 focus:ring-2 focus:ring-white focus:ring-opacity-50"
+                        title="Enter page number"
+                      />
+                      <span className="text-xs sm:text-sm mx-1">/</span>
+                      <span className="text-xs sm:text-sm">{numPages}</span>
+                    </form>
+                    
+                    <button
+                      onClick={goToNextPage}
+                      disabled={pageNumber >= numPages}
+                      className="p-1 hover:bg-white hover:bg-opacity-20 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Next page"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+              </>
             ) : (
               <div className="bg-white dark:bg-dark-card rounded-lg p-4 md:p-6 max-w-4xl w-full max-h-full overflow-auto shadow-lg transition-colors duration-200">
                 <h4 className="text-base md:text-lg font-medium text-gray-900 dark:text-dark-text mb-4 border-b border-gray-200 dark:border-gray-600 pb-2">Extracted Text Content</h4>
@@ -379,7 +410,6 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
         </div>
       </div>
 
-      {/* Share Modal */}
       {showShareModal && (
         <ShareModal
           document={doc}
@@ -398,6 +428,23 @@ const formatFileSize = (bytes: number) => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
+const getTagColor = (tag: string, index: number) => {
+  const colors = [
+    'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+    'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+    'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
+    'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300',
+    'bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-300',
+    'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300',
+    'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+    'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
+  ]
+  
+  // Use tag name to generate consistent color
+  const colorIndex = tag.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length
+  return colors[colorIndex]
+}
+
 export function SearchPage() {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<DocumentWithProfile[]>([])
@@ -413,7 +460,6 @@ export function SearchPage() {
   const { user } = useAuth()
   const searchToast = useSearchToast()
 
-  // Load all documents on component mount
   useEffect(() => {
     fetchAllDocuments()
   }, [])
@@ -423,7 +469,6 @@ export function SearchPage() {
       setError(null)
       console.log('Fetching documents...')
       
-      // Check if user is authenticated
       if (!user?.id) {
         console.log('No authenticated user found')
         setAllDocuments([])
@@ -453,9 +498,8 @@ export function SearchPage() {
       console.log('Documents fetched successfully:', data?.length || 0)
       const documents = data || []
       setAllDocuments(documents)
-      setResults(documents) // Show all documents initially
+      setResults(documents)
       
-      // Extract all unique tags
       const allTags = new Set<string>()
       documents.forEach(doc => {
         if (doc.tags && Array.isArray(doc.tags)) {
@@ -466,7 +510,6 @@ export function SearchPage() {
     } catch (error: any) {
       console.error('Error fetching documents:', error)
       
-      // Provide more specific error messages
       let errorMessage = 'Failed to load documents. '
       
       if (error.message?.includes('Failed to fetch')) {
@@ -489,14 +532,12 @@ export function SearchPage() {
   const handleSearch = async () => {
     let filteredDocs = allDocuments
 
-    // Filter by tags first
     if (selectedTags.length > 0) {
       filteredDocs = filteredDocs.filter(doc => 
         doc.tags && doc.tags.some(tag => selectedTags.includes(tag))
       )
     }
 
-    // If no query, show filtered documents
     if (!query.trim()) {
       setResults(filteredDocs)
       return
@@ -510,7 +551,6 @@ export function SearchPage() {
         throw new Error('User not authenticated')
       }
 
-      // Use full-text search on content and also search in tags and title
       const { data, error } = await supabase
         .from('documents')
         .select(`
@@ -533,7 +573,6 @@ export function SearchPage() {
 
       let searchResults = data || []
 
-      // Apply tag filtering to search results
       if (selectedTags.length > 0) {
         searchResults = searchResults.filter(doc => 
           doc.tags && doc.tags.some(tag => selectedTags.includes(tag))
@@ -569,7 +608,6 @@ export function SearchPage() {
       const debounceTimer = setTimeout(handleSearch, 300)
       return () => clearTimeout(debounceTimer)
     } else {
-      // Show filtered documents when query is empty
       let filteredDocs = allDocuments
       if (selectedTags.length > 0) {
         filteredDocs = filteredDocs.filter(doc => 
@@ -601,7 +639,7 @@ export function SearchPage() {
   }
 
   const handleShare = (doc: DocumentWithProfile, event: React.MouseEvent) => {
-    event.stopPropagation() // Prevent card click
+    event.stopPropagation()
     setShowShareModal(doc)
   }
 
@@ -614,7 +652,6 @@ export function SearchPage() {
     )
   }
 
-  // Show error state
   if (error) {
     return (
       <div className="text-center py-12 px-4">
@@ -663,7 +700,7 @@ export function SearchPage() {
         {/* Tags Filter */}
         {availableTags.length > 0 && (
           <div className="bg-white dark:bg-dark-card rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 p-4 md:p-6 transition-colors duration-200">
-            <div className="flex items-center justify-between mb-3 md:mb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 md:mb-4 gap-2">
               <div className="flex items-center space-x-2">
                 <Tag className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filter by Tags:</span>
@@ -671,7 +708,7 @@ export function SearchPage() {
               {selectedTags.length > 0 && (
                 <button
                   onClick={clearAllTags}
-                  className="text-sm text-blue-600 dark:text-accent-primary hover:text-blue-700 dark:hover:text-accent-primary/80 transition-colors"
+                  className="text-sm text-blue-600 dark:text-accent-primary hover:text-blue-700 dark:hover:text-accent-primary/80 transition-colors self-start sm:self-auto"
                 >
                   Clear all
                 </button>
@@ -679,14 +716,14 @@ export function SearchPage() {
             </div>
             
             <div className="flex flex-wrap gap-2">
-              {availableTags.map((tag) => (
+              {availableTags.map((tag, index) => (
                 <button
                   key={tag}
                   onClick={() => toggleTag(tag)}
-                  className={`inline-flex items-center space-x-1 px-3 py-1 rounded-full text-sm transition-colors ${
+                  className={`inline-flex items-center space-x-1 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
                     selectedTags.includes(tag)
-                      ? 'bg-blue-600 dark:bg-accent-primary text-white'
-                      : 'bg-gray-100 dark:bg-dark-tag-bg text-gray-700 dark:text-dark-tag-text hover:bg-gray-200 dark:hover:bg-dark-tag-alt'
+                      ? 'bg-blue-600 dark:bg-accent-primary text-white shadow-md transform scale-105'
+                      : `${getTagColor(tag, index)} hover:shadow-md hover:scale-105`
                   }`}
                 >
                   <Tag className="w-3 h-3" />
@@ -714,22 +751,20 @@ export function SearchPage() {
 
         {results.length > 0 && (
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 {query ? `Found ${results.length} result${results.length !== 1 ? 's' : ''}` : `Showing ${results.length} document${results.length !== 1 ? 's' : ''}`}
                 {selectedTags.length > 0 && ` with tags: ${selectedTags.join(', ')}`}
               </p>
             </div>
 
-            {/* Responsive Grid Layout */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
               {results.map((doc) => (
                 <div
                   key={doc.id}
                   onClick={() => handleDocumentClick(doc)}
-                  className="bg-white dark:bg-dark-card rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 p-3 md:p-4 hover:shadow-md hover:border-blue-300 dark:hover:border-accent-primary transition-all duration-200 cursor-pointer group aspect-square flex flex-col"
+                  className="bg-white dark:bg-dark-card rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 p-3 md:p-4 hover:shadow-md hover:border-blue-300 dark:hover:border-accent-primary transition-all duration-200 cursor-pointer group flex flex-col h-full"
                 >
-                  {/* Header with icons */}
                   <div className="flex items-start justify-between mb-2 md:mb-3">
                     <div className="flex items-center space-x-2">
                       {doc.file_type === 'pdf' ? (
@@ -751,35 +786,32 @@ export function SearchPage() {
                     </div>
                   </div>
 
-                  {/* Title */}
                   <h3 className="font-semibold text-gray-900 dark:text-dark-text mb-2 md:mb-3 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-accent-primary transition-colors text-sm md:text-base">
                     {doc.title}
                   </h3>
 
-                  {/* Tags - Simplified without background */}
                   {doc.tags && doc.tags.length > 0 && (
                     <div className="flex flex-wrap gap-1 mb-2 md:mb-3 flex-1">
-                      {doc.tags.slice(0, 3).map((tag) => (
+                      {doc.tags.slice(0, 3).map((tag, index) => (
                         <span
                           key={tag}
-                          className={`text-xs transition-colors ${
+                          className={`text-xs px-2 py-1 rounded-full font-medium transition-colors ${
                             selectedTags.includes(tag)
-                              ? 'text-blue-600 dark:text-accent-primary font-medium'
-                              : 'text-gray-600 dark:text-gray-400'
+                              ? 'bg-blue-600 text-white dark:bg-accent-primary'
+                              : getTagColor(tag, index)
                           }`}
                         >
                           #{tag}
                         </span>
                       ))}
                       {doc.tags.length > 3 && (
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                        <span className="text-xs text-gray-500 dark:text-gray-400 px-2 py-1">
                           +{doc.tags.length - 3}
                         </span>
                       )}
                     </div>
                   )}
 
-                  {/* Author */}
                   {doc.user_profiles && (
                     <div className="mb-2">
                       <button
@@ -794,19 +826,17 @@ export function SearchPage() {
                     </div>
                   )}
 
-                  {/* Footer with metadata */}
                   <div className="mt-auto space-y-1 md:space-y-2">
-                    <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
+                    <div className="flex items-center text-xs md:text-sm text-gray-500 dark:text-gray-400">
                       <Calendar className="w-3 h-3 mr-1" />
                       <span>{new Date(doc.created_at).toLocaleDateString()}</span>
                     </div>
                     
-                    <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                    <div className="flex items-center justify-between text-xs md:text-sm text-gray-500 dark:text-gray-400">
                       <span>{formatFileSize(doc.file_size)}</span>
                       <span className="capitalize">{doc.file_type}</span>
                     </div>
 
-                    {/* Action buttons */}
                     <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-600">
                       <button
                         onClick={(e) => {
@@ -856,7 +886,6 @@ export function SearchPage() {
         )}
       </div>
 
-      {/* Document/Image Viewer Modal */}
       {selectedDocument && (
         <>
           {selectedDocument.file_type === 'image' ? (
@@ -873,7 +902,6 @@ export function SearchPage() {
         </>
       )}
 
-      {/* Share Modal */}
       {showShareModal && (
         <ShareModal
           document={showShareModal}
@@ -881,7 +909,6 @@ export function SearchPage() {
         />
       )}
 
-      {/* Profile Modal */}
       {selectedProfile && (
         <ProfilePage
           userId={selectedProfile}

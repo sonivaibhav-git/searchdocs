@@ -45,7 +45,6 @@ export function ImageViewer({ document: doc, onClose }: ImageViewerProps) {
     if (!isNaN(numValue) && numValue >= 25 && numValue <= 500) {
       setScale(numValue / 100)
     } else {
-      // Reset to current scale if invalid
       setZoomInput(Math.round(scale * 100).toString())
     }
   }
@@ -56,7 +55,6 @@ export function ImageViewer({ document: doc, onClose }: ImageViewerProps) {
 
   const toggleFullscreen = () => {
     if (!isFullscreen) {
-      // Enter fullscreen
       const element = document.documentElement
       if (element.requestFullscreen) {
         element.requestFullscreen()
@@ -66,7 +64,6 @@ export function ImageViewer({ document: doc, onClose }: ImageViewerProps) {
         (element as any).msRequestFullscreen()
       }
     } else {
-      // Exit fullscreen
       if (document.exitFullscreen) {
         document.exitFullscreen()
       } else if ((document as any).webkitExitFullscreen) {
@@ -78,7 +75,6 @@ export function ImageViewer({ document: doc, onClose }: ImageViewerProps) {
     setIsFullscreen(!isFullscreen)
   }
 
-  // Listen for fullscreen changes
   useEffect(() => {
     const handleFullscreenChange = () => {
       const isCurrentlyFullscreen = !!(
@@ -118,28 +114,21 @@ export function ImageViewer({ document: doc, onClose }: ImageViewerProps) {
     
     setDownloading(true)
     try {
-      // Fetch the image as a blob
       const response = await fetch(doc.file_url)
       if (!response.ok) throw new Error('Failed to fetch image')
       
       const blob = await response.blob()
-      
-      // Create a download link
       const url = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
       link.download = doc.title || 'image'
       
-      // Trigger download
       document.body.appendChild(link)
       link.click()
-      
-      // Cleanup
       document.body.removeChild(link)
       window.URL.revokeObjectURL(url)
     } catch (error) {
       console.error('Download failed:', error)
-      // Fallback to opening in new tab
       window.open(doc.file_url, '_blank')
     } finally {
       setDownloading(false)
@@ -170,13 +159,13 @@ export function ImageViewer({ document: doc, onClose }: ImageViewerProps) {
             : 'w-full max-w-7xl h-[95vh]'
         } transition-colors duration-200`}>
           {/* Header */}
-          <div className="flex items-center justify-between p-3 md:p-4 border-b border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-dark-search rounded-t-lg flex-shrink-0 transition-colors duration-200">
+          <div className="flex items-center justify-between p-2 sm:p-3 md:p-4 border-b border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-dark-search rounded-t-lg flex-shrink-0 transition-colors duration-200">
             <div className="flex items-center space-x-2 md:space-x-3 min-w-0 flex-1">
-              <div className="w-5 h-5 md:w-6 md:h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded flex items-center justify-center flex-shrink-0">
+              <div className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded flex items-center justify-center flex-shrink-0">
                 <span className="text-white text-xs font-bold">IMG</span>
               </div>
               <div className="min-w-0 flex-1">
-                <h3 className="text-sm md:text-lg font-semibold text-gray-900 dark:text-dark-text truncate">{doc.title}</h3>
+                <h3 className="text-xs sm:text-sm md:text-lg font-semibold text-gray-900 dark:text-dark-text truncate">{doc.title}</h3>
                 <div className="flex items-center space-x-1 md:space-x-2 text-xs md:text-sm text-gray-500 dark:text-gray-400">
                   <span className="hidden sm:inline">{new Date(doc.created_at).toLocaleDateString()}</span>
                   <span className="hidden sm:inline">•</span>
@@ -194,7 +183,6 @@ export function ImageViewer({ document: doc, onClose }: ImageViewerProps) {
             </div>
             
             <div className="flex items-center space-x-1 md:space-x-2 flex-shrink-0">
-              {/* Zoom Controls */}
               <button
                 onClick={resetZoom}
                 className="p-1 md:p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors"
@@ -211,14 +199,13 @@ export function ImageViewer({ document: doc, onClose }: ImageViewerProps) {
                 <ZoomOut className="w-3 h-3 md:w-4 md:h-4" />
               </button>
               
-              {/* Editable Zoom Input */}
               <form onSubmit={handleZoomInputSubmit} className="flex items-center">
                 <input
                   type="text"
                   value={zoomInput}
                   onChange={handleZoomInputChange}
                   onBlur={handleZoomInputBlur}
-                  className="w-12 md:w-16 text-xs md:text-sm text-center bg-white dark:bg-dark-card text-gray-900 dark:text-dark-text px-1 md:px-2 py-1 rounded border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 dark:focus:ring-accent-primary focus:border-transparent"
+                  className="w-8 sm:w-12 md:w-16 text-xs md:text-sm text-center bg-white dark:bg-dark-card text-gray-900 dark:text-dark-text px-1 md:px-2 py-1 rounded border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 dark:focus:ring-accent-primary focus:border-transparent"
                   title="Enter zoom percentage (25-500%)"
                 />
                 <span className="text-xs md:text-sm text-gray-600 dark:text-gray-300 ml-1">%</span>
@@ -232,7 +219,6 @@ export function ImageViewer({ document: doc, onClose }: ImageViewerProps) {
                 <ZoomIn className="w-3 h-3 md:w-4 md:h-4" />
               </button>
 
-              {/* Fullscreen Toggle */}
               <button
                 onClick={toggleFullscreen}
                 className="p-1 md:p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors"
@@ -241,7 +227,6 @@ export function ImageViewer({ document: doc, onClose }: ImageViewerProps) {
                 <Expand className="w-3 h-3 md:w-4 md:h-4" />
               </button>
 
-              {/* Share Button */}
               <button
                 onClick={() => setShowShareModal(true)}
                 className="p-1 md:p-2 text-blue-600 dark:text-accent-primary hover:text-blue-700 dark:hover:text-accent-primary/80 hover:bg-blue-50 dark:hover:bg-accent-primary/10 rounded-md transition-colors"
@@ -250,11 +235,10 @@ export function ImageViewer({ document: doc, onClose }: ImageViewerProps) {
                 <Share2 className="w-3 h-3 md:w-4 md:h-4" />
               </button>
               
-              {/* Download Button */}
               <button
                 onClick={handleDownload}
                 disabled={downloading || !doc.file_url}
-                className="flex items-center space-x-1 px-2 md:px-3 py-1 md:py-2 text-xs md:text-sm text-white bg-blue-600 dark:bg-accent-primary hover:bg-blue-700 dark:hover:bg-accent-primary/90 rounded-md transition-colors ml-1 md:ml-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center space-x-1 px-2 md:px-3 py-1 md:py-2 text-xs md:text-sm text-white bg-blue-600 dark:bg-accent-primary hover:bg-blue-700 dark:hover:bg-accent-primary/90 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {downloading ? (
                   <>
@@ -324,7 +308,6 @@ export function ImageViewer({ document: doc, onClose }: ImageViewerProps) {
             )}
           </div>
 
-          {/* Footer with image info */}
           {imageLoaded && (
             <div className="px-4 py-2 bg-gray-50 dark:bg-dark-search border-t border-gray-200 dark:border-gray-600 text-xs text-gray-600 dark:text-gray-400 text-center transition-colors duration-200">
               <span>Use mouse wheel or zoom controls to adjust size • Click download to save to device</span>
@@ -333,7 +316,6 @@ export function ImageViewer({ document: doc, onClose }: ImageViewerProps) {
         </div>
       </div>
 
-      {/* Share Modal */}
       {showShareModal && (
         <ShareModal
           document={doc}
