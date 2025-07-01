@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { FileText, Image, Calendar, Trash2, Download, X, ZoomIn, ZoomOut, Edit3, Save, Globe, Lock, Tag, Plus, User, Expand, RotateCcw, AlertTriangle, Share2 } from 'lucide-react'
+import { FileText, Image, Calendar, Trash2, Download, X, ZoomIn, ZoomOut, Edit3, Save, Globe, Lock, Tag, Plus, User, Expand, RotateCcw, AlertTriangle, Share2, ChevronLeft, ChevronRight } from 'lucide-react'
 import { supabase, DocumentWithProfile } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { Document as PDFDocument, Page, pdfjs } from 'react-pdf'
@@ -21,6 +21,7 @@ interface DocumentViewerProps {
 function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
   const [numPages, setNumPages] = useState<number>(0)
   const [pageNumber, setPageNumber] = useState<number>(1)
+  const [pageInput, setPageInput] = useState<string>('1')
   const [scale, setScale] = useState<number>(1.0)
   const [zoomInput, setZoomInput] = useState<string>('100')
   const [isFullscreen, setIsFullscreen] = useState(false)
@@ -59,7 +60,6 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
     if (!isNaN(numValue) && numValue >= 25 && numValue <= 500) {
       setScale(numValue / 100)
     } else {
-      // Reset to current scale if invalid
       setZoomInput(Math.round(scale * 100).toString())
     }
   }
@@ -68,9 +68,26 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
     handleZoomInputSubmit({ preventDefault: () => {} } as React.FormEvent)
   }
 
+  const handlePageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPageInput(e.target.value)
+  }
+
+  const handlePageInputSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    const numValue = parseInt(pageInput)
+    if (!isNaN(numValue) && numValue >= 1 && numValue <= numPages) {
+      setPageNumber(numValue)
+    } else {
+      setPageInput(pageNumber.toString())
+    }
+  }
+
+  const handlePageInputBlur = () => {
+    handlePageInputSubmit({ preventDefault: () => {} } as React.FormEvent)
+  }
+
   const toggleFullscreen = () => {
     if (!isFullscreen) {
-      // Enter fullscreen
       const element = document.documentElement
       if (element.requestFullscreen) {
         element.requestFullscreen()
@@ -80,7 +97,6 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
         (element as any).msRequestFullscreen()
       }
     } else {
-      // Exit fullscreen
       if (document.exitFullscreen) {
         document.exitFullscreen()
       } else if ((document as any).webkitExitFullscreen) {
@@ -92,7 +108,6 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
     setIsFullscreen(!isFullscreen)
   }
 
-  // Listen for fullscreen changes
   useEffect(() => {
     const handleFullscreenChange = () => {
       const isCurrentlyFullscreen = !!(
@@ -103,7 +118,6 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
       setIsFullscreen(isCurrentlyFullscreen)
     }
 
-    // Check if document and addEventListener exist before using them
     if (typeof document !== 'undefined' && document.addEventListener) {
       document.addEventListener('fullscreenchange', handleFullscreenChange)
       document.addEventListener('webkitfullscreenchange', handleFullscreenChange)
@@ -118,11 +132,15 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
   }, [])
 
   const goToPrevPage = () => {
-    setPageNumber(prev => Math.max(prev - 1, 1))
+    const newPage = Math.max(pageNumber - 1, 1)
+    setPageNumber(newPage)
+    setPageInput(newPage.toString())
   }
 
   const goToNextPage = () => {
-    setPageNumber(prev => Math.min(prev + 1, numPages))
+    const newPage = Math.min(pageNumber + 1, numPages)
+    setPageNumber(newPage)
+    setPageInput(newPage.toString())
   }
 
   const handleDirectDownload = async () => {
@@ -130,31 +148,41 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
     
     setDownloading(true)
     try {
-      // Fetch the PDF as a blob
       const response = await fetch(doc.file_url)
       if (!response.ok) throw new Error('Failed to fetch PDF')
       
       const blob = await response.blob()
-      
-      // Create a download link
       const url = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
       link.download = doc.title || 'document.pdf'
       
-      // Trigger download
       document.body.appendChild(link)
       link.click()
-      
-      // Cleanup
       document.body.removeChild(link)
       window.URL.revokeObjectURL(url)
     } catch (error) {
       console.error('Download failed:', error)
-      // Fallback to opening in new tab
       window.open(doc.file_url, '_blank')
     } finally {
       setDownloading(false)
+    }
+  }
+
+  // Handle scroll for page navigation
+  const handleScroll = (e: React.WheelEvent) => {
+    if (e.ctrlKey || e.metaKey) return // Allow zoom with Ctrl+scroll
+    
+    if (e.deltaY > 0 && pageNumber < numPages) {
+      // Scroll down - next page
+      const newPage = pageNumber + 1
+      setPageNumber(newPage)
+      setPageInput(newPage.toString())
+    } else if (e.deltaY < 0 && pageNumber > 1) {
+      // Scroll up - previous page
+      const newPage = pageNumber - 1
+      setPageNumber(newPage)
+      setPageInput(newPage.toString())
     }
   }
 
@@ -182,15 +210,15 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
             : 'w-full max-w-7xl h-[95vh]'
         } transition-colors duration-200`}>
           {/* Header */}
-          <div className="flex items-center justify-between p-3 md:p-4 border-b border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-dark-search rounded-t-lg flex-shrink-0 transition-colors duration-200">
+          <div className="flex items-center justify-between p-2 sm:p-3 md:p-4 border-b border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-dark-search rounded-t-lg flex-shrink-0 transition-colors duration-200">
             <div className="flex items-center space-x-2 md:space-x-3 min-w-0 flex-1">
               {doc.file_type === 'pdf' ? (
-                <FileText className="w-5 h-5 md:w-6 md:h-6 text-red-500 flex-shrink-0" />
+                <FileText className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-red-500 flex-shrink-0" />
               ) : (
-                <Image className="w-5 h-5 md:w-6 md:h-6 text-blue-500 flex-shrink-0" />
+                <Image className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-blue-500 flex-shrink-0" />
               )}
               <div className="min-w-0 flex-1">
-                <h3 className="text-sm md:text-lg font-semibold text-gray-900 dark:text-dark-text truncate">{doc.title}</h3>
+                <h3 className="text-xs sm:text-sm md:text-lg font-semibold text-gray-900 dark:text-dark-text truncate">{doc.title}</h3>
                 <div className="flex items-center space-x-1 md:space-x-2 text-xs md:text-sm text-gray-500 dark:text-gray-400">
                   <span className="hidden sm:inline">{new Date(doc.created_at).toLocaleDateString()}</span>
                   <span className="hidden sm:inline">•</span>
@@ -215,35 +243,6 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
             </div>
             
             <div className="flex items-center space-x-1 md:space-x-2 flex-shrink-0">
-              {/* PDF Navigation Controls */}
-              {doc.file_type === 'pdf' && numPages > 0 && (
-                <>
-                  <button
-                    onClick={goToPrevPage}
-                    disabled={pageNumber <= 1}
-                    className="p-1 md:p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Previous page"
-                  >
-                    ←
-                  </button>
-                  
-                  <span className="text-xs md:text-sm text-gray-600 dark:text-gray-300 bg-white dark:bg-dark-card px-2 md:px-3 py-1 rounded border border-gray-300 dark:border-gray-600">
-                    {pageNumber} / {numPages}
-                  </span>
-                  
-                  <button
-                    onClick={goToNextPage}
-                    disabled={pageNumber >= numPages}
-                    className="p-1 md:p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Next page"
-                  >
-                    →
-                  </button>
-                  
-                  <div className="w-px h-4 md:h-6 bg-gray-300 dark:bg-gray-600 mx-1 md:mx-2"></div>
-                </>
-              )}
-              
               {/* Zoom Controls */}
               <button
                 onClick={resetZoom}
@@ -261,14 +260,13 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
                 <ZoomOut className="w-3 h-3 md:w-4 md:h-4" />
               </button>
               
-              {/* Editable Zoom Input */}
               <form onSubmit={handleZoomInputSubmit} className="flex items-center">
                 <input
                   type="text"
                   value={zoomInput}
                   onChange={handleZoomInputChange}
                   onBlur={handleZoomInputBlur}
-                  className="w-12 md:w-16 text-xs md:text-sm text-center bg-white dark:bg-dark-card text-gray-900 dark:text-dark-text px-1 md:px-2 py-1 rounded border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 dark:focus:ring-accent-primary focus:border-transparent"
+                  className="w-8 sm:w-12 md:w-16 text-xs md:text-sm text-center bg-white dark:bg-dark-card text-gray-900 dark:text-dark-text px-1 md:px-2 py-1 rounded border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 dark:focus:ring-accent-primary focus:border-transparent"
                   title="Enter zoom percentage (25-500%)"
                 />
                 <span className="text-xs md:text-sm text-gray-600 dark:text-gray-300 ml-1">%</span>
@@ -282,7 +280,6 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
                 <ZoomIn className="w-3 h-3 md:w-4 md:h-4" />
               </button>
 
-              {/* Fullscreen Toggle */}
               <button
                 onClick={toggleFullscreen}
                 className="p-1 md:p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors"
@@ -291,7 +288,6 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
                 <Expand className="w-3 h-3 md:w-4 md:h-4" />
               </button>
 
-              {/* Share Button */}
               <button
                 onClick={() => setShowShareModal(true)}
                 className="p-1 md:p-2 text-blue-600 dark:text-accent-primary hover:text-blue-700 dark:hover:text-accent-primary/80 hover:bg-blue-50 dark:hover:bg-accent-primary/10 rounded-md transition-colors"
@@ -300,12 +296,11 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
                 <Share2 className="w-3 h-3 md:w-4 md:h-4" />
               </button>
               
-              {/* Direct Download Button */}
               {doc.file_url && (
                 <button
                   onClick={handleDirectDownload}
                   disabled={downloading}
-                  className="flex items-center space-x-1 px-2 md:px-3 py-1 md:py-2 text-xs md:text-sm text-white bg-blue-600 dark:bg-accent-primary hover:bg-blue-700 dark:hover:bg-accent-primary/90 rounded-md transition-colors ml-1 md:ml-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center space-x-1 px-2 md:px-3 py-1 md:py-2 text-xs md:text-sm text-white bg-blue-600 dark:bg-accent-primary hover:bg-blue-700 dark:hover:bg-accent-primary/90 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   title="Download PDF directly to your device"
                 >
                   {downloading ? (
@@ -332,32 +327,74 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-auto bg-gray-100 dark:bg-dark-bg flex items-center justify-center p-2 md:p-4 transition-colors duration-200">
+          <div className="flex-1 overflow-hidden bg-gray-100 dark:bg-dark-bg flex flex-col items-center justify-center p-2 md:p-4 transition-colors duration-200 relative">
             {doc.file_type === 'pdf' && doc.file_url ? (
-              <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-                <PDFDocument
-                  file={doc.file_url}
-                  onLoadSuccess={onDocumentLoadSuccess}
-                  loading={
-                    <div className="flex items-center justify-center p-4 md:p-8">
-                      <div className="animate-spin rounded-full h-6 w-6 md:h-8 md:w-8 border-b-2 border-blue-600 dark:border-accent-primary"></div>
-                      <span className="ml-2 text-gray-600 dark:text-gray-300 text-sm md:text-base">Loading PDF...</span>
-                    </div>
-                  }
-                  error={
-                    <div className="flex items-center justify-center p-4 md:p-8 text-red-600 dark:text-accent-warning">
-                      <span className="text-sm md:text-base">Failed to load PDF. Please try downloading the file.</span>
-                    </div>
-                  }
+              <>
+                <div 
+                  className="bg-white shadow-lg rounded-lg overflow-hidden flex-1 flex items-center justify-center w-full"
+                  onWheel={handleScroll}
                 >
-                  <Page
-                    pageNumber={pageNumber}
-                    scale={scale}
-                    renderTextLayer={true}
-                    renderAnnotationLayer={true}
-                  />
-                </PDFDocument>
-              </div>
+                  <PDFDocument
+                    file={doc.file_url}
+                    onLoadSuccess={onDocumentLoadSuccess}
+                    loading={
+                      <div className="flex items-center justify-center p-4 md:p-8">
+                        <div className="animate-spin rounded-full h-6 w-6 md:h-8 md:w-8 border-b-2 border-blue-600 dark:border-accent-primary"></div>
+                        <span className="ml-2 text-gray-600 dark:text-gray-300 text-sm md:text-base">Loading PDF...</span>
+                      </div>
+                    }
+                    error={
+                      <div className="flex items-center justify-center p-4 md:p-8 text-red-600 dark:text-accent-warning">
+                        <span className="text-sm md:text-base">Failed to load PDF. Please try downloading the file.</span>
+                      </div>
+                    }
+                  >
+                    <Page
+                      pageNumber={pageNumber}
+                      scale={scale}
+                      renderTextLayer={true}
+                      renderAnnotationLayer={true}
+                      width={Math.min(viewerDimensions.width, window.innerWidth - 32)}
+                    />
+                  </PDFDocument>
+                </div>
+
+                {/* Page Navigation - Bottom Center */}
+                {numPages > 0 && (
+                  <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center space-x-2 bg-black bg-opacity-75 text-white px-3 py-2 rounded-lg">
+                    <button
+                      onClick={goToPrevPage}
+                      disabled={pageNumber <= 1}
+                      className="p-1 hover:bg-white hover:bg-opacity-20 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Previous page"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    
+                    <form onSubmit={handlePageInputSubmit} className="flex items-center">
+                      <input
+                        type="text"
+                        value={pageInput}
+                        onChange={handlePageInputChange}
+                        onBlur={handlePageInputBlur}
+                        className="w-8 sm:w-12 text-xs sm:text-sm text-center bg-white bg-opacity-20 text-white px-1 py-1 rounded border-0 focus:ring-2 focus:ring-white focus:ring-opacity-50"
+                        title="Enter page number"
+                      />
+                      <span className="text-xs sm:text-sm mx-1">/</span>
+                      <span className="text-xs sm:text-sm">{numPages}</span>
+                    </form>
+                    
+                    <button
+                      onClick={goToNextPage}
+                      disabled={pageNumber >= numPages}
+                      className="p-1 hover:bg-white hover:bg-opacity-20 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Next page"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+              </>
             ) : (
               <div className="bg-white dark:bg-dark-card rounded-lg p-4 md:p-6 max-w-4xl w-full max-h-full overflow-auto shadow-lg transition-colors duration-200">
                 <h4 className="text-base md:text-lg font-medium text-gray-900 dark:text-dark-text mb-4 border-b border-gray-200 dark:border-gray-600 pb-2">Extracted Text Content</h4>
@@ -379,7 +416,6 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
         </div>
       </div>
 
-      {/* Share Modal */}
       {showShareModal && (
         <ShareModal
           document={doc}
@@ -430,19 +466,19 @@ function EditDocumentModal({ document: doc, onClose, onSave }: EditDocumentModal
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
       <div className="bg-white dark:bg-dark-card rounded-lg shadow-2xl w-full max-w-md transition-colors duration-200">
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-600">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text">Edit Document Settings</h3>
+        <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200 dark:border-gray-600">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-dark-text">Edit Document Settings</h3>
           <button
             onClick={onClose}
             className="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
         </div>
 
-        <div className="p-4 md:p-6 space-y-4 md:space-y-6">
+        <div className="p-3 sm:p-4 md:p-6 space-y-4 md:space-y-6">
           <div>
             <h4 className="text-sm font-medium text-gray-900 dark:text-dark-text mb-2 truncate">{doc.title}</h4>
             <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -450,7 +486,6 @@ function EditDocumentModal({ document: doc, onClose, onSave }: EditDocumentModal
             </p>
           </div>
 
-          {/* Privacy Setting */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Privacy</label>
             <div className="space-y-2">
@@ -481,11 +516,10 @@ function EditDocumentModal({ document: doc, onClose, onSave }: EditDocumentModal
             </div>
           </div>
 
-          {/* Tags */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tags</label>
             <div className="space-y-3">
-              <div className="flex items-center space-x-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <input
                   type="text"
                   value={newTag}
@@ -496,7 +530,7 @@ function EditDocumentModal({ document: doc, onClose, onSave }: EditDocumentModal
                 />
                 <button
                   onClick={addTag}
-                  className="flex items-center space-x-1 px-3 py-1 bg-blue-600 dark:bg-accent-primary text-white rounded-md hover:bg-blue-700 dark:hover:bg-accent-primary/90 transition-colors text-sm"
+                  className="flex items-center justify-center space-x-1 px-3 py-1 bg-blue-600 dark:bg-accent-primary text-white rounded-md hover:bg-blue-700 dark:hover:bg-accent-primary/90 transition-colors text-sm whitespace-nowrap"
                 >
                   <Plus className="w-3 h-3" />
                   <span>Add</span>
@@ -524,17 +558,17 @@ function EditDocumentModal({ document: doc, onClose, onSave }: EditDocumentModal
           </div>
         </div>
 
-        <div className="flex items-center justify-end space-x-3 p-4 border-t border-gray-200 dark:border-gray-600">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 p-3 sm:p-4 border-t border-gray-200 dark:border-gray-600">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-dark-text transition-colors"
+            className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-dark-text transition-colors order-2 sm:order-1"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
             disabled={saving}
-            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 dark:bg-accent-primary text-white rounded-md hover:bg-blue-700 dark:hover:bg-accent-primary/90 transition-colors text-sm disabled:opacity-50"
+            className="flex items-center justify-center space-x-2 px-4 py-2 bg-blue-600 dark:bg-accent-primary text-white rounded-md hover:bg-blue-700 dark:hover:bg-accent-primary/90 transition-colors text-sm disabled:opacity-50 order-1 sm:order-2"
           >
             {saving ? (
               <>
@@ -573,53 +607,53 @@ function DeleteConfirmationModal({ document: doc, onConfirm, onCancel }: DeleteC
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
       <div className="bg-white dark:bg-dark-card rounded-lg shadow-2xl w-full max-w-md transition-colors duration-200">
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           <div className="flex items-center space-x-3 mb-4">
             <div className="flex-shrink-0">
-              <AlertTriangle className="w-8 h-8 text-red-500 dark:text-accent-warning" />
+              <AlertTriangle className="w-6 h-6 sm:w-8 sm:h-8 text-red-500 dark:text-accent-warning" />
             </div>
             <div className="flex-1">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text">Delete Document</h3>
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-dark-text">Delete Document</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                 This action cannot be undone.
               </p>
             </div>
           </div>
 
-          <div className="bg-gray-50 dark:bg-dark-search rounded-lg p-4 mb-6 transition-colors duration-200">
+          <div className="bg-gray-50 dark:bg-dark-search rounded-lg p-3 sm:p-4 mb-4 sm:mb-6 transition-colors duration-200">
             <div className="flex items-center space-x-3">
               {doc.file_type === 'pdf' ? (
-                <FileText className="w-6 h-6 text-red-500 flex-shrink-0" />
+                <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-red-500 flex-shrink-0" />
               ) : (
-                <Image className="w-6 h-6 text-blue-500 flex-shrink-0" />
+                <Image className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500 flex-shrink-0" />
               )}
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-gray-900 dark:text-dark-text truncate">{doc.title}</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
+                <p className="font-medium text-gray-900 dark:text-dark-text truncate text-sm sm:text-base">{doc.title}</p>
+                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                   {new Date(doc.created_at).toLocaleDateString()} • {formatFileSize(doc.file_size)}
                 </p>
               </div>
             </div>
           </div>
 
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 sm:mb-6">
             Are you sure you want to delete this document? This will permanently remove the file from storage and all associated data from the database.
           </p>
 
-          <div className="flex items-center justify-end space-x-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3">
             <button
               onClick={onCancel}
               disabled={deleting}
-              className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-dark-text transition-colors disabled:opacity-50"
+              className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-dark-text transition-colors disabled:opacity-50 order-2 sm:order-1"
             >
               Cancel
             </button>
             <button
               onClick={handleConfirm}
               disabled={deleting}
-              className="flex items-center space-x-2 px-4 py-2 bg-red-600 dark:bg-accent-warning text-white rounded-md hover:bg-red-700 dark:hover:bg-accent-warning/90 transition-colors text-sm disabled:opacity-50"
+              className="flex items-center justify-center space-x-2 px-4 py-2 bg-red-600 dark:bg-accent-warning text-white rounded-md hover:bg-red-700 dark:hover:bg-accent-warning/90 transition-colors text-sm disabled:opacity-50 order-1 sm:order-2"
             >
               {deleting ? (
                 <>
@@ -699,7 +733,6 @@ export function DocumentsPage() {
 
       if (error) throw error
 
-      // Update local state
       setDocuments(prev => 
         prev.map(doc => 
           doc.id === updatedDoc.id 
@@ -723,7 +756,6 @@ export function DocumentsPage() {
       const document = documents.find(doc => doc.id === id)
       if (!document) throw new Error('Document not found')
 
-      // First, delete the file from storage if it exists
       if (document.metadata?.storage_path && document.metadata?.storage_bucket) {
         console.log(`Deleting file from storage: ${document.metadata.storage_bucket}/${document.metadata.storage_path}`)
         
@@ -733,19 +765,15 @@ export function DocumentsPage() {
 
         if (storageError) {
           console.error('Storage deletion error:', storageError)
-          // Continue with database deletion even if storage deletion fails
-          // This prevents orphaned database records
         } else {
           console.log('File successfully deleted from storage')
         }
       } else {
-        // Fallback: try to extract storage info from file_url if metadata is missing
         if (document.file_url) {
           try {
             const url = new URL(document.file_url)
             const pathParts = url.pathname.split('/')
             
-            // URL format: /storage/v1/object/public/{bucket}/{path}
             if (pathParts.length >= 6 && pathParts[1] === 'storage' && pathParts[4] === 'public') {
               const bucket = pathParts[5]
               const filePath = pathParts.slice(6).join('/')
@@ -768,7 +796,6 @@ export function DocumentsPage() {
         }
       }
 
-      // Delete the document record from the database
       const { error: dbError } = await supabase
         .from('documents')
         .delete()
@@ -776,7 +803,6 @@ export function DocumentsPage() {
 
       if (dbError) throw dbError
 
-      // Update local state
       setDocuments((prev) => prev.filter((doc) => doc.id !== id))
       
       documentToast.showDeleteSuccess(document.title)
@@ -788,7 +814,7 @@ export function DocumentsPage() {
   }
 
   const handleDeleteClick = (document: DocumentWithProfile, event: React.MouseEvent) => {
-    event.stopPropagation() // Prevent card click
+    event.stopPropagation()
     setDeletingDocument(document)
   }
 
@@ -804,43 +830,36 @@ export function DocumentsPage() {
   }
 
   const handleDirectDownload = async (document: DocumentWithProfile, event: React.MouseEvent) => {
-    event.stopPropagation() // Prevent card click
+    event.stopPropagation()
     if (!document.file_url) return
     
     try {
-      // Fetch the file as a blob
       const response = await fetch(document.file_url)
       if (!response.ok) throw new Error('Failed to fetch file')
       
       const blob = await response.blob()
-      
-      // Create a download link
       const url = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
       link.download = document.title || 'document'
       
-      // Trigger download
       document.body.appendChild(link)
       link.click()
-      
-      // Cleanup
       document.body.removeChild(link)
       window.URL.revokeObjectURL(url)
     } catch (error) {
       console.error('Download failed:', error)
-      // Fallback to opening in new tab
       window.open(document.file_url, '_blank')
     }
   }
 
   const handleEdit = (document: DocumentWithProfile, event: React.MouseEvent) => {
-    event.stopPropagation() // Prevent card click
+    event.stopPropagation()
     setEditingDocument(document)
   }
 
   const handleShare = (document: DocumentWithProfile, event: React.MouseEvent) => {
-    event.stopPropagation() // Prevent card click
+    event.stopPropagation()
     setShowShareModal(document)
   }
 
@@ -861,7 +880,7 @@ export function DocumentsPage() {
     <>
       <div className="space-y-4 md:space-y-6">
         <div className="bg-white dark:bg-dark-card rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 p-4 md:p-6 transition-colors duration-200">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-dark-text">Document Dashboard</h2>
             <div className="text-sm text-gray-600 dark:text-gray-400">
               {documents.length} document{documents.length !== 1 ? 's' : ''} total
@@ -901,11 +920,10 @@ export function DocumentsPage() {
                   </div>
                 </div>
 
-                <h3 className="font-medium text-gray-900 dark:text-dark-text mb-2 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-accent-primary transition-colors text-sm md:text-base">
+                <h3 className="font-medium text-gray-900 dark:text-dark-text mb-2 md:mb-3 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-accent-primary transition-colors text-sm md:text-base">
                   {doc.title}
                 </h3>
 
-                {/* Author */}
                 {doc.user_profiles && (
                   <div className="mb-2">
                     <button
@@ -920,7 +938,6 @@ export function DocumentsPage() {
                   </div>
                 )}
 
-                {/* Tags - Simplified without background */}
                 {doc.tags && doc.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1 mb-2 md:mb-3">
                     {doc.tags.slice(0, 2).map((tag) => (
@@ -993,7 +1010,6 @@ export function DocumentsPage() {
         )}
       </div>
 
-      {/* Document/Image Viewer Modal */}
       {selectedDocument && (
         <>
           {selectedDocument.file_type === 'image' ? (
@@ -1010,7 +1026,6 @@ export function DocumentsPage() {
         </>
       )}
 
-      {/* Edit Document Modal */}
       {editingDocument && (
         <EditDocumentModal
           document={editingDocument}
@@ -1019,7 +1034,6 @@ export function DocumentsPage() {
         />
       )}
 
-      {/* Delete Confirmation Modal */}
       {deletingDocument && (
         <DeleteConfirmationModal
           document={deletingDocument}
@@ -1028,7 +1042,6 @@ export function DocumentsPage() {
         />
       )}
 
-      {/* Share Modal */}
       {showShareModal && (
         <ShareModal
           document={showShareModal}
@@ -1036,7 +1049,6 @@ export function DocumentsPage() {
         />
       )}
 
-      {/* Profile Modal */}
       {selectedProfile && (
         <ProfilePage
           userId={selectedProfile}

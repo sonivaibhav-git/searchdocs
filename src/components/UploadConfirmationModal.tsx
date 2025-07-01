@@ -68,78 +68,83 @@ export function UploadConfirmationModal({ files, onConfirm, onCancel }: UploadCo
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-dark-card rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col transition-colors duration-200">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+      <div className="bg-white dark:bg-dark-card rounded-lg shadow-2xl w-full max-w-4xl max-h-[95vh] flex flex-col transition-colors duration-200">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-600">
-          <div className="flex items-center space-x-3">
-            <Upload className="w-6 h-6 text-blue-600 dark:text-accent-primary" />
-            <div>
-              <h2 className="text-xl font-bold text-gray-900 dark:text-dark-text">Confirm Upload Settings</h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Configure privacy and tags for {files.length} file{files.length !== 1 ? 's' : ''}</p>
+        <div className="flex items-center justify-between p-3 sm:p-4 md:p-6 border-b border-gray-200 dark:border-gray-600 flex-shrink-0">
+          <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+            <Upload className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 dark:text-accent-primary flex-shrink-0" />
+            <div className="min-w-0 flex-1">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-dark-text truncate">Confirm Upload Settings</h2>
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Configure privacy and tags for {files.length} file{files.length !== 1 ? 's' : ''}</p>
             </div>
           </div>
           
           <button
             onClick={onCancel}
-            className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-md transition-colors"
+            className="p-1.5 sm:p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-md transition-colors flex-shrink-0"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-auto p-4 md:p-6">
-          <div className="space-y-4">
+        <div className="flex-1 overflow-auto p-3 sm:p-4 md:p-6">
+          <div className="space-y-3 sm:space-y-4">
             {uploadFiles.map((file) => (
               <div
                 key={file.id}
-                className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-gray-50 dark:bg-dark-search transition-colors duration-200"
+                className="border border-gray-200 dark:border-gray-600 rounded-lg p-3 sm:p-4 bg-gray-50 dark:bg-dark-search transition-colors duration-200"
               >
-                <div className="flex items-start space-x-4">
-                  <div className="flex-shrink-0">
+                <div className="flex flex-col sm:flex-row sm:items-start space-y-3 sm:space-y-0 sm:space-x-4">
+                  <div className="flex items-center space-x-3 sm:space-x-0 sm:flex-col sm:items-center flex-shrink-0">
                     {file.file.type === 'application/pdf' ? (
-                      <FileText className="w-8 h-8 text-red-500" />
+                      <FileText className="w-6 h-6 sm:w-8 sm:h-8 text-red-500" />
                     ) : (
-                      <Image className="w-8 h-8 text-blue-500" />
+                      <Image className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500" />
                     )}
+                    <div className="sm:hidden flex-1 min-w-0">
+                      <h3 className="font-medium text-gray-900 dark:text-dark-text truncate text-sm">{file.file.name}</h3>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {formatFileSize(file.file.size)} • {file.file.type === 'application/pdf' ? 'PDF' : 'Image'}
+                      </p>
+                    </div>
                   </div>
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-3">
-                      <div>
-                        <h3 className="font-medium text-gray-900 dark:text-dark-text truncate">{file.file.name}</h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          {formatFileSize(file.file.size)} • {file.file.type === 'application/pdf' ? 'PDF' : 'Image'}
-                        </p>
-                      </div>
+                  <div className="flex-1 min-w-0 space-y-3 sm:space-y-4">
+                    {/* Desktop file info */}
+                    <div className="hidden sm:block">
+                      <h3 className="font-medium text-gray-900 dark:text-dark-text truncate">{file.file.name}</h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {formatFileSize(file.file.size)} • {file.file.type === 'application/pdf' ? 'PDF' : 'Image'}
+                      </p>
                     </div>
 
                     {/* Privacy Setting */}
-                    <div className="mb-4">
+                    <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Privacy</label>
                       <div className="space-y-2">
-                        <label className="flex items-center space-x-3 cursor-pointer">
+                        <label className="flex items-start space-x-3 cursor-pointer">
                           <input
                             type="radio"
                             checked={!file.isPublic}
                             onChange={() => updateFilePrivacy(file.id, false)}
-                            className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                            className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500 mt-0.5 flex-shrink-0"
                           />
-                          <div className="flex items-center space-x-2">
-                            <Lock className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                          <div className="flex items-start space-x-2 min-w-0">
+                            <Lock className="w-4 h-4 text-gray-600 dark:text-gray-400 mt-0.5 flex-shrink-0" />
                             <span className="text-sm text-gray-700 dark:text-gray-300">Private - Only visible to you</span>
                           </div>
                         </label>
-                        <label className="flex items-center space-x-3 cursor-pointer">
+                        <label className="flex items-start space-x-3 cursor-pointer">
                           <input
                             type="radio"
                             checked={file.isPublic}
                             onChange={() => updateFilePrivacy(file.id, true)}
-                            className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                            className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500 mt-0.5 flex-shrink-0"
                           />
-                          <div className="flex items-center space-x-2">
-                            <Globe className="w-4 h-4 text-green-600 dark:text-accent-success" />
+                          <div className="flex items-start space-x-2 min-w-0">
+                            <Globe className="w-4 h-4 text-green-600 dark:text-accent-success mt-0.5 flex-shrink-0" />
                             <span className="text-sm text-gray-700 dark:text-gray-300">Public - Visible to all users</span>
                           </div>
                         </label>
@@ -150,7 +155,7 @@ export function UploadConfirmationModal({ files, onConfirm, onCancel }: UploadCo
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tags</label>
                       <div className="space-y-3">
-                        <div className="flex items-center space-x-2">
+                        <div className="flex flex-col sm:flex-row gap-2">
                           <input
                             type="text"
                             value={newTag}
@@ -161,11 +166,11 @@ export function UploadConfirmationModal({ files, onConfirm, onCancel }: UploadCo
                               }
                             }}
                             placeholder="Add a tag..."
-                            className="flex-1 px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md text-sm focus:ring-2 focus:ring-blue-500 dark:focus:ring-accent-primary focus:border-transparent bg-white dark:bg-dark-card text-gray-900 dark:text-dark-text"
+                            className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm focus:ring-2 focus:ring-blue-500 dark:focus:ring-accent-primary focus:border-transparent bg-white dark:bg-dark-card text-gray-900 dark:text-dark-text"
                           />
                           <button
                             onClick={() => addTagToFile(file.id)}
-                            className="flex items-center space-x-1 px-3 py-1 bg-blue-600 dark:bg-accent-primary text-white rounded-md hover:bg-blue-700 dark:hover:bg-accent-primary/90 transition-colors text-sm"
+                            className="flex items-center justify-center space-x-1 px-3 py-2 bg-blue-600 dark:bg-accent-primary text-white rounded-md hover:bg-blue-700 dark:hover:bg-accent-primary/90 transition-colors text-sm whitespace-nowrap"
                           >
                             <Plus className="w-3 h-3" />
                             <span>Add</span>
@@ -199,16 +204,16 @@ export function UploadConfirmationModal({ files, onConfirm, onCancel }: UploadCo
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end space-x-3 p-4 md:p-6 border-t border-gray-200 dark:border-gray-600">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 p-3 sm:p-4 md:p-6 border-t border-gray-200 dark:border-gray-600 flex-shrink-0">
           <button
             onClick={onCancel}
-            className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-dark-text transition-colors"
+            className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-dark-text transition-colors order-2 sm:order-1"
           >
             Cancel
           </button>
           <button
             onClick={handleConfirm}
-            className="flex items-center space-x-2 px-6 py-2 bg-blue-600 dark:bg-accent-primary text-white rounded-md hover:bg-blue-700 dark:hover:bg-accent-primary/90 transition-colors text-sm font-medium"
+            className="flex items-center justify-center space-x-2 px-6 py-2 bg-blue-600 dark:bg-accent-primary text-white rounded-md hover:bg-blue-700 dark:hover:bg-accent-primary/90 transition-colors text-sm font-medium order-1 sm:order-2"
           >
             <Upload className="w-4 h-4" />
             <span>Upload {files.length} File{files.length !== 1 ? 's' : ''}</span>

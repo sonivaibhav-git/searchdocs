@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { ToastProvider } from './components/Toast'
@@ -7,6 +8,7 @@ import { Layout } from './components/Layout'
 import { SearchPage } from './components/SearchPage'
 import { UploadPage } from './components/UploadPage'
 import { DocumentsPage } from './components/DocumentsPage'
+import { DocumentViewerPage } from './components/DocumentViewerPage'
 
 function AppContent() {
   const { user, loading } = useAuth()
@@ -38,9 +40,22 @@ function AppContent() {
   }
 
   return (
-    <Layout currentPage={currentPage} onPageChange={setCurrentPage}>
-      {renderPage()}
-    </Layout>
+    <Router>
+      <Routes>
+        {/* Main app routes */}
+        <Route path="/" element={
+          <Layout currentPage={currentPage} onPageChange={setCurrentPage}>
+            {renderPage()}
+          </Layout>
+        } />
+        
+        {/* Document viewer route for shared links */}
+        <Route path="/document/:documentId" element={<DocumentViewerPage />} />
+        
+        {/* Redirect any unknown routes to home */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Router>
   )
 }
 

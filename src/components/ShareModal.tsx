@@ -14,11 +14,13 @@ export function ShareModal({ document, onClose }: ShareModalProps) {
   const [showWarning, setShowWarning] = useState(false)
 
   useEffect(() => {
-    // Generate secure document URL
+    // Generate proper document URL that works with the app routing
     const baseUrl = window.location.origin
     const documentId = document.id
-    const shareToken = generateShareToken()
-    const url = `${baseUrl}/share/${documentId}?token=${shareToken}&access=${accessLevel}`
+    
+    // Create a URL that will work with the app's routing system
+    // This should point to a route that can handle document viewing
+    const url = `${baseUrl}/document/${documentId}`
     setShareUrl(url)
     
     // Show warning for sensitive documents
@@ -26,10 +28,6 @@ export function ShareModal({ document, onClose }: ShareModalProps) {
       ['confidential', 'private', 'internal', 'sensitive'].includes(tag.toLowerCase())
     ))
   }, [document, accessLevel])
-
-  const generateShareToken = () => {
-    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
-  }
 
   const copyToClipboard = async () => {
     try {
@@ -41,6 +39,21 @@ export function ShareModal({ document, onClose }: ShareModalProps) {
       trackShareEvent('copy', accessLevel)
     } catch (error) {
       console.error('Failed to copy to clipboard:', error)
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea')
+      textArea.value = shareUrl
+      document.body.appendChild(textArea)
+      textArea.focus()
+      textArea.select()
+      try {
+        document.execCommand('copy')
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+        trackShareEvent('copy', accessLevel)
+      } catch (fallbackError) {
+        console.error('Fallback copy failed:', fallbackError)
+      }
+      document.body.removeChild(textArea)
     }
   }
 
@@ -56,7 +69,7 @@ export function ShareModal({ document, onClose }: ShareModalProps) {
 
   const shareViaEmail = () => {
     const subject = encodeURIComponent(`Shared Document: ${document.title}`)
-    const body = encodeURIComponent(`I've shared a document with you: ${document.title}\n\nAccess it here: ${shareUrl}`)
+    const body = encodeURIComponent(`I've shared a document with you: ${document.title}\n\nAccess it here: ${shareUrl}\n\nThis document is ${document.is_public ? 'publicly accessible' : 'private'}.`)
     window.open(`mailto:?subject=${subject}&body=${body}`)
     trackShareEvent('email', accessLevel)
   }
@@ -68,8 +81,8 @@ export function ShareModal({ document, onClose }: ShareModalProps) {
   }
 
   const shareViaTelegram = () => {
-    const text = encodeURIComponent(`Check out this document: ${document.title}\n${shareUrl}`)
-    window.open(`https://t.me/share/url?url=${shareUrl}&text=${text}`)
+    const text = encodeURIComponent(`Check out this document: ${document.title}`)
+    window.open(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${text}`)
     trackShareEvent('telegram', accessLevel)
   }
 
@@ -83,35 +96,35 @@ export function ShareModal({ document, onClose }: ShareModalProps) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
       <div className="bg-white dark:bg-dark-card rounded-lg shadow-2xl w-full max-w-md md:max-w-lg transition-colors duration-200">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-600">
-          <div className="flex items-center space-x-3">
-            <Share2 className="w-6 h-6 text-blue-600 dark:text-accent-primary" />
-            <div>
-              <h2 className="text-xl font-bold text-gray-900 dark:text-dark-text">Share Document</h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400 truncate max-w-64">{document.title}</p>
+        <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 dark:border-gray-600">
+          <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+            <Share2 className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 dark:text-accent-primary flex-shrink-0" />
+            <div className="min-w-0 flex-1">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-dark-text">Share Document</h2>
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 truncate">{document.title}</p>
             </div>
           </div>
           
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-md transition-colors"
+            className="p-1.5 sm:p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-md transition-colors flex-shrink-0"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-6">
+        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
           {/* Warning Message */}
           {showWarning && (
-            <div className="flex items-start space-x-3 p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg">
-              <AlertTriangle className="w-5 h-5 text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5" />
-              <div>
+            <div className="flex items-start space-x-3 p-3 sm:p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg">
+              <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5" />
+              <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-orange-800 dark:text-orange-300">Sharing Sensitive Content</p>
-                <p className="text-sm text-orange-700 dark:text-orange-400 mt-1">
+                <p className="text-xs sm:text-sm text-orange-700 dark:text-orange-400 mt-1">
                   This document contains information from your docs. Please ensure you have permission to share.
                 </p>
               </div>
@@ -123,7 +136,7 @@ export function ShareModal({ document, onClose }: ShareModalProps) {
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
               Access Rights
             </label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               {[
                 { value: 'view', label: 'View only', icon: <Eye className="w-4 h-4" /> },
                 { value: 'edit', label: 'Edit', icon: <Edit3 className="w-4 h-4" /> },
@@ -132,14 +145,14 @@ export function ShareModal({ document, onClose }: ShareModalProps) {
                 <button
                   key={option.value}
                   onClick={() => setAccessLevel(option.value as any)}
-                  className={`flex items-center space-x-2 p-3 rounded-lg border transition-colors ${
+                  className={`flex items-center justify-center space-x-2 p-2 sm:p-3 rounded-lg border transition-colors ${
                     accessLevel === option.value
                       ? 'border-blue-500 dark:border-accent-primary bg-blue-50 dark:bg-accent-primary/10 text-blue-700 dark:text-accent-primary'
                       : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300'
                   }`}
                 >
                   {option.icon}
-                  <span className="text-sm font-medium">{option.label}</span>
+                  <span className="text-xs sm:text-sm font-medium">{option.label}</span>
                 </button>
               ))}
             </div>
@@ -150,7 +163,7 @@ export function ShareModal({ document, onClose }: ShareModalProps) {
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Share Link
             </label>
-            <div className="flex items-center space-x-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <input
                 type="text"
                 value={shareUrl}
@@ -159,7 +172,7 @@ export function ShareModal({ document, onClose }: ShareModalProps) {
               />
               <button
                 onClick={copyToClipboard}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-md transition-colors min-w-[100px] justify-center ${
+                className={`flex items-center justify-center space-x-2 px-4 py-2 rounded-md transition-colors min-w-[100px] ${
                   copied
                     ? 'bg-green-600 dark:bg-accent-success text-white'
                     : 'bg-blue-600 dark:bg-accent-primary text-white hover:bg-blue-700 dark:hover:bg-accent-primary/90'
@@ -185,29 +198,29 @@ export function ShareModal({ document, onClose }: ShareModalProps) {
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
               Share via
             </label>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
               <button
                 onClick={shareViaEmail}
-                className="flex flex-col items-center space-y-2 p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:border-gray-300 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-dark-search transition-colors group"
+                className="flex flex-col items-center space-y-2 p-3 sm:p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:border-gray-300 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-dark-search transition-colors group"
               >
-                <Mail className="w-6 h-6 text-gray-600 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-accent-primary transition-colors" />
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Email</span>
+                <Mail className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-accent-primary transition-colors" />
+                <span className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">Email</span>
               </button>
               
               <button
                 onClick={shareViaWhatsApp}
-                className="flex flex-col items-center space-y-2 p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:border-gray-300 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-dark-search transition-colors group"
+                className="flex flex-col items-center space-y-2 p-3 sm:p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:border-gray-300 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-dark-search transition-colors group"
               >
-                <MessageCircle className="w-6 h-6 text-gray-600 dark:text-gray-400 group-hover:text-green-600 dark:group-hover:text-accent-success transition-colors" />
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">WhatsApp</span>
+                <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600 dark:text-gray-400 group-hover:text-green-600 dark:group-hover:text-accent-success transition-colors" />
+                <span className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">WhatsApp</span>
               </button>
               
               <button
                 onClick={shareViaTelegram}
-                className="flex flex-col items-center space-y-2 p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:border-gray-300 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-dark-search transition-colors group"
+                className="flex flex-col items-center space-y-2 p-3 sm:p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:border-gray-300 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-dark-search transition-colors group"
               >
-                <Send className="w-6 h-6 text-gray-600 dark:text-gray-400 group-hover:text-blue-500 transition-colors" />
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Telegram</span>
+                <Send className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600 dark:text-gray-400 group-hover:text-blue-500 transition-colors" />
+                <span className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">Telegram</span>
               </button>
             </div>
           </div>
@@ -216,14 +229,14 @@ export function ShareModal({ document, onClose }: ShareModalProps) {
           <div className="flex items-center space-x-2 p-3 bg-gray-50 dark:bg-dark-search rounded-lg">
             {document.is_public ? (
               <>
-                <Globe className="w-4 h-4 text-green-600 dark:text-accent-success" />
+                <Globe className="w-4 h-4 text-green-600 dark:text-accent-success flex-shrink-0" />
                 <span className="text-sm text-gray-700 dark:text-gray-300">
                   This document is public and can be accessed by anyone with the link
                 </span>
               </>
             ) : (
               <>
-                <Lock className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                <Lock className="w-4 h-4 text-gray-600 dark:text-gray-400 flex-shrink-0" />
                 <span className="text-sm text-gray-700 dark:text-gray-300">
                   This document is private and requires authentication to access
                 </span>
@@ -233,7 +246,7 @@ export function ShareModal({ document, onClose }: ShareModalProps) {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-200 dark:border-gray-600">
+        <div className="flex items-center justify-end space-x-3 p-4 sm:p-6 border-t border-gray-200 dark:border-gray-600">
           <button
             onClick={onClose}
             className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-dark-text transition-colors"
