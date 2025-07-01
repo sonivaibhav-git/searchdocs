@@ -59,6 +59,7 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
     if (!isNaN(numValue) && numValue >= 25 && numValue <= 500) {
       setScale(numValue / 100)
     } else {
+      // Reset to current scale if invalid
       setZoomInput(Math.round(scale * 100).toString())
     }
   }
@@ -69,6 +70,7 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
 
   const toggleFullscreen = () => {
     if (!isFullscreen) {
+      // Enter fullscreen
       const element = document.documentElement
       if (element.requestFullscreen) {
         element.requestFullscreen()
@@ -78,6 +80,7 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
         (element as any).msRequestFullscreen()
       }
     } else {
+      // Exit fullscreen
       if (document.exitFullscreen) {
         document.exitFullscreen()
       } else if ((document as any).webkitExitFullscreen) {
@@ -89,6 +92,7 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
     setIsFullscreen(!isFullscreen)
   }
 
+  // Listen for fullscreen changes
   useEffect(() => {
     const handleFullscreenChange = () => {
       const isCurrentlyFullscreen = !!(
@@ -99,6 +103,7 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
       setIsFullscreen(isCurrentlyFullscreen)
     }
 
+    // Check if document and addEventListener exist before using them
     if (typeof document !== 'undefined' && document.addEventListener) {
       document.addEventListener('fullscreenchange', handleFullscreenChange)
       document.addEventListener('webkitfullscreenchange', handleFullscreenChange)
@@ -125,22 +130,28 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
     
     setDownloading(true)
     try {
+      // Fetch the PDF as a blob
       const response = await fetch(doc.file_url)
       if (!response.ok) throw new Error('Failed to fetch PDF')
       
       const blob = await response.blob()
+      
+      // Create a download link
       const url = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
       link.download = doc.title || 'document.pdf'
       
+      // Trigger download
       document.body.appendChild(link)
       link.click()
       
+      // Cleanup
       document.body.removeChild(link)
       window.URL.revokeObjectURL(url)
     } catch (error) {
       console.error('Download failed:', error)
+      // Fallback to opening in new tab
       window.open(doc.file_url, '_blank')
     } finally {
       setDownloading(false)
@@ -171,16 +182,16 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
             : 'w-full max-w-7xl h-[95vh]'
         } transition-colors duration-200`}>
           {/* Header */}
-          <div className="flex items-center justify-between p-2 md:p-4 border-b border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-dark-search rounded-t-lg flex-shrink-0 transition-colors duration-200">
-            <div className="flex items-center space-x-2 min-w-0 flex-1">
+          <div className="flex items-center justify-between p-3 md:p-4 border-b border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-dark-search rounded-t-lg flex-shrink-0 transition-colors duration-200">
+            <div className="flex items-center space-x-2 md:space-x-3 min-w-0 flex-1">
               {doc.file_type === 'pdf' ? (
-                <FileText className="w-4 h-4 md:w-6 md:h-6 text-red-500 flex-shrink-0" />
+                <FileText className="w-5 h-5 md:w-6 md:h-6 text-red-500 flex-shrink-0" />
               ) : (
-                <Image className="w-4 h-4 md:w-6 md:h-6 text-blue-500 flex-shrink-0" />
+                <Image className="w-5 h-5 md:w-6 md:h-6 text-blue-500 flex-shrink-0" />
               )}
               <div className="min-w-0 flex-1">
-                <h3 className="text-xs md:text-lg font-semibold text-gray-900 dark:text-dark-text truncate">{doc.title}</h3>
-                <div className="flex items-center space-x-1 text-xs text-gray-500 dark:text-gray-400">
+                <h3 className="text-sm md:text-lg font-semibold text-gray-900 dark:text-dark-text truncate">{doc.title}</h3>
+                <div className="flex items-center space-x-1 md:space-x-2 text-xs md:text-sm text-gray-500 dark:text-gray-400">
                   <span className="hidden sm:inline">{new Date(doc.created_at).toLocaleDateString()}</span>
                   <span className="hidden sm:inline">•</span>
                   <span>{formatFileSize(doc.file_size)}</span>
@@ -203,7 +214,7 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
               </div>
             </div>
             
-            <div className="flex items-center space-x-1 flex-shrink-0">
+            <div className="flex items-center space-x-1 md:space-x-2 flex-shrink-0">
               {/* PDF Navigation Controls */}
               {doc.file_type === 'pdf' && numPages > 0 && (
                 <>
@@ -216,7 +227,7 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
                     ←
                   </button>
                   
-                  <span className="text-xs text-gray-600 dark:text-gray-300 bg-white dark:bg-dark-card px-1 md:px-3 py-1 rounded border border-gray-300 dark:border-gray-600">
+                  <span className="text-xs md:text-sm text-gray-600 dark:text-gray-300 bg-white dark:bg-dark-card px-2 md:px-3 py-1 rounded border border-gray-300 dark:border-gray-600">
                     {pageNumber} / {numPages}
                   </span>
                   
@@ -229,7 +240,7 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
                     →
                   </button>
                   
-                  <div className="w-px h-4 md:h-6 bg-gray-300 dark:bg-gray-600 mx-1"></div>
+                  <div className="w-px h-4 md:h-6 bg-gray-300 dark:bg-gray-600 mx-1 md:mx-2"></div>
                 </>
               )}
               
@@ -257,10 +268,10 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
                   value={zoomInput}
                   onChange={handleZoomInputChange}
                   onBlur={handleZoomInputBlur}
-                  className="w-8 md:w-16 text-xs text-center bg-white dark:bg-dark-card text-gray-900 dark:text-dark-text px-1 py-1 rounded border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 dark:focus:ring-accent-primary focus:border-transparent"
+                  className="w-12 md:w-16 text-xs md:text-sm text-center bg-white dark:bg-dark-card text-gray-900 dark:text-dark-text px-1 md:px-2 py-1 rounded border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 dark:focus:ring-accent-primary focus:border-transparent"
                   title="Enter zoom percentage (25-500%)"
                 />
-                <span className="text-xs text-gray-600 dark:text-gray-300 ml-1">%</span>
+                <span className="text-xs md:text-sm text-gray-600 dark:text-gray-300 ml-1">%</span>
               </form>
               
               <button
@@ -294,12 +305,12 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
                 <button
                   onClick={handleDirectDownload}
                   disabled={downloading}
-                  className="flex items-center space-x-1 px-1 md:px-3 py-1 md:py-2 text-xs text-white bg-blue-600 dark:bg-accent-primary hover:bg-blue-700 dark:hover:bg-accent-primary/90 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center space-x-1 px-2 md:px-3 py-1 md:py-2 text-xs md:text-sm text-white bg-blue-600 dark:bg-accent-primary hover:bg-blue-700 dark:hover:bg-accent-primary/90 rounded-md transition-colors ml-1 md:ml-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   title="Download PDF directly to your device"
                 >
                   {downloading ? (
                     <>
-                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                      <div className="animate-spin rounded-full h-3 w-3 md:h-4 md:w-4 border-b-2 border-white"></div>
                       <span className="hidden sm:inline">Downloading...</span>
                     </>
                   ) : (
@@ -313,7 +324,7 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
               
               <button
                 onClick={onClose}
-                className="p-1 md:p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors"
+                className="p-1 md:p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors ml-1 md:ml-2"
               >
                 <X className="w-4 h-4 md:w-5 md:h-5" />
               </button>
@@ -688,6 +699,7 @@ export function DocumentsPage() {
 
       if (error) throw error
 
+      // Update local state
       setDocuments(prev => 
         prev.map(doc => 
           doc.id === updatedDoc.id 
@@ -711,6 +723,7 @@ export function DocumentsPage() {
       const document = documents.find(doc => doc.id === id)
       if (!document) throw new Error('Document not found')
 
+      // First, delete the file from storage if it exists
       if (document.metadata?.storage_path && document.metadata?.storage_bucket) {
         console.log(`Deleting file from storage: ${document.metadata.storage_bucket}/${document.metadata.storage_path}`)
         
@@ -720,15 +733,19 @@ export function DocumentsPage() {
 
         if (storageError) {
           console.error('Storage deletion error:', storageError)
+          // Continue with database deletion even if storage deletion fails
+          // This prevents orphaned database records
         } else {
           console.log('File successfully deleted from storage')
         }
       } else {
+        // Fallback: try to extract storage info from file_url if metadata is missing
         if (document.file_url) {
           try {
             const url = new URL(document.file_url)
             const pathParts = url.pathname.split('/')
             
+            // URL format: /storage/v1/object/public/{bucket}/{path}
             if (pathParts.length >= 6 && pathParts[1] === 'storage' && pathParts[4] === 'public') {
               const bucket = pathParts[5]
               const filePath = pathParts.slice(6).join('/')
@@ -751,6 +768,7 @@ export function DocumentsPage() {
         }
       }
 
+      // Delete the document record from the database
       const { error: dbError } = await supabase
         .from('documents')
         .delete()
@@ -758,6 +776,7 @@ export function DocumentsPage() {
 
       if (dbError) throw dbError
 
+      // Update local state
       setDocuments((prev) => prev.filter((doc) => doc.id !== id))
       
       documentToast.showDeleteSuccess(document.title)
@@ -769,7 +788,7 @@ export function DocumentsPage() {
   }
 
   const handleDeleteClick = (document: DocumentWithProfile, event: React.MouseEvent) => {
-    event.stopPropagation()
+    event.stopPropagation() // Prevent card click
     setDeletingDocument(document)
   }
 
@@ -785,37 +804,43 @@ export function DocumentsPage() {
   }
 
   const handleDirectDownload = async (document: DocumentWithProfile, event: React.MouseEvent) => {
-    event.stopPropagation()
+    event.stopPropagation() // Prevent card click
     if (!document.file_url) return
     
     try {
+      // Fetch the file as a blob
       const response = await fetch(document.file_url)
       if (!response.ok) throw new Error('Failed to fetch file')
       
       const blob = await response.blob()
+      
+      // Create a download link
       const url = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
       link.download = document.title || 'document'
       
+      // Trigger download
       document.body.appendChild(link)
       link.click()
       
+      // Cleanup
       document.body.removeChild(link)
       window.URL.revokeObjectURL(url)
     } catch (error) {
       console.error('Download failed:', error)
+      // Fallback to opening in new tab
       window.open(document.file_url, '_blank')
     }
   }
 
   const handleEdit = (document: DocumentWithProfile, event: React.MouseEvent) => {
-    event.stopPropagation()
+    event.stopPropagation() // Prevent card click
     setEditingDocument(document)
   }
 
   const handleShare = (document: DocumentWithProfile, event: React.MouseEvent) => {
-    event.stopPropagation()
+    event.stopPropagation() // Prevent card click
     setShowShareModal(document)
   }
 
@@ -834,10 +859,10 @@ export function DocumentsPage() {
 
   return (
     <>
-      <div className="space-y-3 md:space-y-6">
-        <div className="bg-white dark:bg-dark-card rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 p-3 md:p-6 transition-colors duration-200">
+      <div className="space-y-4 md:space-y-6">
+        <div className="bg-white dark:bg-dark-card rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 p-4 md:p-6 transition-colors duration-200">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg md:text-2xl font-bold text-gray-900 dark:text-dark-text">Document Dashboard</h2>
+            <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-dark-text">Document Dashboard</h2>
             <div className="text-sm text-gray-600 dark:text-gray-400">
               {documents.length} document{documents.length !== 1 ? 's' : ''} total
             </div>
@@ -880,6 +905,7 @@ export function DocumentsPage() {
                   {doc.title}
                 </h3>
 
+                {/* Author */}
                 {doc.user_profiles && (
                   <div className="mb-2">
                     <button
@@ -894,6 +920,7 @@ export function DocumentsPage() {
                   </div>
                 )}
 
+                {/* Tags - Simplified without background */}
                 {doc.tags && doc.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1 mb-2 md:mb-3">
                     {doc.tags.slice(0, 2).map((tag) => (

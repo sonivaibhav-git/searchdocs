@@ -31,7 +31,7 @@ export function Layout({ children, currentPage = 'search', onPageChange }: Layou
 
   return (
     <>
-      <div className="min-h-screen bg-gray-50 dark:bg-dark-bg pb-16 md:pb-0 transition-colors duration-200">
+      <div className="min-h-screen bg-gray-50 dark:bg-dark-bg pb-20 md:pb-0 transition-colors duration-200">
         {/* Desktop Header */}
         <header className="bg-white dark:bg-dark-card shadow-sm border-b border-gray-200 dark:border-gray-700 hidden md:block transition-colors duration-200">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -40,6 +40,7 @@ export function Layout({ children, currentPage = 'search', onPageChange }: Layou
                 <div className="flex items-center space-x-2">
                   <div className="relative">
                     <Search className="w-8 h-8 text-blue-600 dark:text-accent-primary" />
+                    <Globe className="w-4 h-4 text-blue-600 dark:text-accent-primary absolute -bottom-1 -right-1" />
                   </div>
                   <h1 className="text-xl font-bold text-gray-900 dark:text-dark-text">SearchDoc</h1>
                 </div>
@@ -120,6 +121,7 @@ export function Layout({ children, currentPage = 'search', onPageChange }: Layou
               <div className="flex items-center space-x-2">
                 <div className="relative">
                   <Search className="w-6 h-6 text-blue-600 dark:text-accent-primary" />
+                  <Globe className="w-3 h-3 text-blue-600 dark:text-accent-primary absolute -bottom-0.5 -right-0.5" />
                 </div>
                 <h1 className="text-lg font-bold text-gray-900 dark:text-dark-text">SearchDoc</h1>
               </div>

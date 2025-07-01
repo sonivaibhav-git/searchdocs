@@ -27,6 +27,7 @@ export function UploadPage() {
 
   const checkForDuplicates = async (files: File[]) => {
     try {
+      // Get existing documents for the user
       const { data: existingDocs, error } = await supabase
         .from('documents')
         .select('title, file_size')
@@ -37,11 +38,13 @@ export function UploadPage() {
       const duplicates: string[] = []
       const existingDocsMap = new Map()
       
+      // Create a map of existing documents by title and size
       existingDocs?.forEach(doc => {
         const key = `${doc.title}-${doc.file_size}`
         existingDocsMap.set(key, true)
       })
 
+      // Check each new file against existing documents
       files.forEach(file => {
         const key = `${file.name}-${file.size}`
         if (existingDocsMap.has(key)) {
@@ -62,10 +65,12 @@ export function UploadPage() {
     } else if (fileType.startsWith('image/')) {
       return 'image-documents'
     }
+    // Fallback to pdf-documents for unknown types
     return 'pdf-documents'
   }
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    // Check for duplicates first
     const duplicateFiles = await checkForDuplicates(acceptedFiles)
     
     if (duplicateFiles.length > 0) {
@@ -78,11 +83,14 @@ export function UploadPage() {
       status: duplicateFiles.includes(file.name) ? 'duplicate' : 'pending',
       progress: duplicateFiles.includes(file.name) ? 100 : 0,
       error: duplicateFiles.includes(file.name) ? 'Document already exists' : undefined,
-      isPublic: false,
-      tags: [],
+      isPublic: false, // Default to private
+      tags: [], // Default to no tags
     }))
 
+    // Filter out duplicates for confirmation
     const filesToConfirm = newFiles.filter(uploadFile => uploadFile.status !== 'duplicate')
+    
+    // Add duplicates directly to upload files (they won't be processed)
     const duplicateUploadFiles = newFiles.filter(uploadFile => uploadFile.status === 'duplicate')
     setUploadFiles((prev) => [...prev, ...duplicateUploadFiles])
 
@@ -103,15 +111,18 @@ export function UploadPage() {
 
   const extractTextFromPDF = async (file: File): Promise<string> => {
     try {
+      // For basic PDF text extraction, we'll use a simple approach
+      // In a production environment, you'd want to use a proper PDF parsing library
       const arrayBuffer = await file.arrayBuffer()
       const text = new TextDecoder().decode(arrayBuffer)
       
+      // Extract readable text from the PDF buffer (this is a simplified approach)
       const textMatch = text.match(/\/Length\s+(\d+).*?stream\s*(.*?)\s*endstream/gs)
       if (textMatch) {
         return textMatch.map(match => {
           const streamContent = match.replace(/.*stream\s*/, '').replace(/\s*endstream.*/, '')
           return streamContent.replace(/[^\x20-\x7E]/g, ' ').trim()
-        }).join(' ').substring(0, 1000)
+        }).join(' ').substring(0, 1000) // Limit to first 1000 chars
       }
       
       return `PDF content from ${file.name} - Advanced PDF text extraction would require additional libraries`
@@ -137,6 +148,7 @@ export function UploadPage() {
 
     uploadToast.showUploadStart(file.name)
 
+    // Update status to processing
     setUploadFiles((prev) =>
       prev.map((f) =>
         f.id === uploadFile.id ? { ...f, status: 'processing', progress: 10 } : f
@@ -144,6 +156,7 @@ export function UploadPage() {
     )
 
     try {
+      // Extract text based on file type
       let extractedText = ''
       
       if (file.type === 'application/pdf') {
@@ -168,13 +181,17 @@ export function UploadPage() {
         )
       )
 
+      // Determine the appropriate bucket based on file type
       const bucketName = getBucketForFileType(file.type)
+      
+      // Generate unique file path
       const fileExt = file.name.split('.').pop()
       const fileName = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`
       const filePath = `${user?.id}/${fileName}`
 
       console.log(`Uploading ${file.type} file to bucket: ${bucketName}, path: ${filePath}`)
 
+      // Upload file to the appropriate Supabase Storage bucket
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from(bucketName)
         .upload(filePath, file, {
@@ -195,12 +212,14 @@ export function UploadPage() {
         )
       )
 
+      // Get the public URL for the uploaded file
       const { data: { publicUrl } } = supabase.storage
         .from(bucketName)
         .getPublicUrl(filePath)
 
       console.log('Generated public URL:', publicUrl)
 
+      // Verify the file exists by checking if we can access it
       try {
         const response = await fetch(publicUrl, { method: 'HEAD' })
         if (!response.ok) {
@@ -218,6 +237,7 @@ export function UploadPage() {
         )
       )
 
+      // Save document metadata to database
       const { data: dbData, error: dbError } = await supabase
         .from('documents')
         .insert({
@@ -240,6 +260,7 @@ export function UploadPage() {
 
       if (dbError) {
         console.error('Database insert error:', dbError)
+        // If database insert fails, try to clean up the uploaded file
         try {
           await supabase.storage.from(bucketName).remove([filePath])
         } catch (cleanupError) {
@@ -250,6 +271,7 @@ export function UploadPage() {
 
       console.log('Document saved to database:', dbData)
 
+      // Mark as completed
       setUploadFiles((prev) =>
         prev.map((f) =>
           f.id === uploadFile.id ? { ...f, status: 'completed', progress: 100 } : f
@@ -281,6 +303,7 @@ export function UploadPage() {
     setShowConfirmation(false)
     setPendingFiles([])
     
+    // Add confirmed files to upload list and start processing
     setUploadFiles((prev) => [...prev, ...confirmedFiles])
     confirmedFiles.forEach(processFile)
   }
@@ -304,28 +327,28 @@ export function UploadPage() {
 
   return (
     <>
-      <div className="space-y-3 md:space-y-6">
-        <div className="bg-white dark:bg-dark-card rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 p-3 md:p-6 transition-colors duration-200">
-          <h2 className="text-lg md:text-2xl font-bold text-gray-900 dark:text-dark-text mb-3 md:mb-6">Upload Documents</h2>
+      <div className="space-y-4 md:space-y-6">
+        <div className="bg-white dark:bg-dark-card rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 p-4 md:p-6 transition-colors duration-200">
+          <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-dark-text mb-4 md:mb-6">Upload Documents</h2>
 
           <div
             {...getRootProps()}
-            className={`border-2 border-dashed rounded-lg p-4 md:p-8 text-center cursor-pointer transition-colors ${
+            className={`border-2 border-dashed rounded-lg p-6 md:p-8 text-center cursor-pointer transition-colors ${
               isDragActive
                 ? 'border-blue-400 dark:border-accent-primary bg-blue-50 dark:bg-accent-primary/10'
                 : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
             }`}
           >
             <input {...getInputProps()} />
-            <Upload className="mx-auto h-8 w-8 md:h-12 md:w-12 text-gray-400 dark:text-gray-500 mb-2 md:mb-4" />
+            <Upload className="mx-auto h-10 w-10 md:h-12 md:w-12 text-gray-400 dark:text-gray-500 mb-3 md:mb-4" />
             {isDragActive ? (
-              <p className="text-sm md:text-lg text-blue-600 dark:text-accent-primary">Drop the files here...</p>
+              <p className="text-base md:text-lg text-blue-600 dark:text-accent-primary">Drop the files here...</p>
             ) : (
               <div>
-                <p className="text-sm md:text-lg text-gray-600 dark:text-gray-300 mb-2">
+                <p className="text-base md:text-lg text-gray-600 dark:text-gray-300 mb-2">
                   Drag & drop files here, or click to select files
                 </p>
-                <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   Supports PDF and image files (PNG, JPG, GIF, TIFF, WebP, etc.) up to 50MB each
                 </p>
               </div>
@@ -334,27 +357,27 @@ export function UploadPage() {
         </div>
 
         {uploadFiles.length > 0 && (
-          <div className="bg-white dark:bg-dark-card rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 p-3 md:p-6 transition-colors duration-200">
-            <h3 className="text-sm md:text-lg font-semibold text-gray-900 dark:text-dark-text mb-3 md:mb-4">Upload Progress</h3>
-            <div className="space-y-2 md:space-y-4">
+          <div className="bg-white dark:bg-dark-card rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 p-4 md:p-6 transition-colors duration-200">
+            <h3 className="text-base md:text-lg font-semibold text-gray-900 dark:text-dark-text mb-3 md:mb-4">Upload Progress</h3>
+            <div className="space-y-3 md:space-y-4">
               {uploadFiles.map((uploadFile) => (
                 <div
                   key={uploadFile.id}
-                  className="border border-gray-200 dark:border-gray-600 rounded-lg p-2 md:p-4 bg-gray-50 dark:bg-dark-search transition-colors duration-200"
+                  className="border border-gray-200 dark:border-gray-600 rounded-lg p-3 md:p-4 bg-gray-50 dark:bg-dark-search transition-colors duration-200"
                 >
-                  <div className="flex items-start space-x-2 md:space-x-4">
+                  <div className="flex items-start space-x-3 md:space-x-4">
                     <div className="flex-shrink-0">
                       {uploadFile.file.type === 'application/pdf' ? (
-                        <File className="w-5 h-5 md:w-8 md:h-8 text-red-500" />
+                        <File className="w-6 h-6 md:w-8 md:h-8 text-red-500" />
                       ) : (
-                        <Image className="w-5 h-5 md:w-8 md:h-8 text-blue-500" />
+                        <Image className="w-6 h-6 md:w-8 md:h-8 text-blue-500" />
                       )}
                     </div>
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs md:text-sm font-medium text-gray-900 dark:text-dark-text truncate">
+                          <p className="text-sm font-medium text-gray-900 dark:text-dark-text truncate">
                             {uploadFile.file.name}
                           </p>
                           <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -393,6 +416,7 @@ export function UploadPage() {
                         </div>
                       )}
 
+                      {/* Show settings for completed uploads */}
                       {uploadFile.status === 'completed' && (
                         <div className="mt-2 p-2 bg-gray-100 dark:bg-dark-bg rounded text-xs transition-colors duration-200">
                           <div className="flex items-center space-x-4">
