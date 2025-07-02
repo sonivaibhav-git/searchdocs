@@ -16,6 +16,46 @@ export function ImageViewer({ document: doc, onClose }: ImageViewerProps) {
   const [imageError, setImageError] = useState(false)
   const [downloading, setDownloading] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+
+  // Check if mobile device
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768)
+    }
+    
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  // Handle browser back button on mobile
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      event.preventDefault()
+      onClose()
+    }
+
+    // Push a state when viewer opens
+    window.history.pushState({ viewerOpen: true }, '', window.location.href)
+    window.addEventListener('popstate', handlePopState)
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState)
+      // Go back to remove the pushed state
+      if (window.history.state?.viewerOpen) {
+        window.history.back()
+      }
+    }
+  }, [onClose])
+
+  // Prevent body scroll when viewer is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
+  }, [])
 
   const handleZoomIn = () => {
     const newScale = Math.min(scale + 0.25, 5.0)
@@ -30,8 +70,9 @@ export function ImageViewer({ document: doc, onClose }: ImageViewerProps) {
   }
 
   const resetZoom = () => {
-    setScale(1.0)
-    setZoomInput('100')
+    const defaultScale = isMobile ? 0.8 : 1.0
+    setScale(defaultScale)
+    setZoomInput(Math.round(defaultScale * 100).toString())
   }
 
   const handleZoomInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -101,6 +142,11 @@ export function ImageViewer({ document: doc, onClose }: ImageViewerProps) {
   const handleImageLoad = () => {
     setImageLoaded(true)
     setImageError(false)
+    // Auto-fit for mobile
+    if (isMobile) {
+      setScale(0.8)
+      setZoomInput('80')
+    }
   }
 
   const handleImageError = () => {
@@ -140,6 +186,12 @@ export function ImageViewer({ document: doc, onClose }: ImageViewerProps) {
       return {
         width: window.innerWidth * 0.95,
         height: window.innerHeight * 0.85
+      }
+    }
+    if (isMobile) {
+      return {
+        width: window.innerWidth * 0.95,
+        height: window.innerHeight * 0.7
       }
     }
     return {
@@ -186,7 +238,7 @@ export function ImageViewer({ document: doc, onClose }: ImageViewerProps) {
               <button
                 onClick={resetZoom}
                 className="p-1 md:p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors"
-                title="Reset zoom to 100%"
+                title="Reset zoom"
               >
                 <RotateCcw className="w-3 h-3 md:w-4 md:h-4" />
               </button>
