@@ -763,7 +763,11 @@ const formatFileSize = (bytes: number) => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
-export function DocumentsPage() {
+interface DocumentsPageProps {
+  onViewerStateChange?: (isOpen: boolean) => void
+}
+
+export function DocumentsPage({ onViewerStateChange }: DocumentsPageProps) {
   const [documents, setDocuments] = useState<DocumentWithProfile[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedDocument, setSelectedDocument] = useState<DocumentWithProfile | null>(null)
@@ -773,6 +777,11 @@ export function DocumentsPage() {
   const [showShareModal, setShowShareModal] = useState<DocumentWithProfile | null>(null)
   const { user } = useAuth()
   const documentToast = useDocumentToast()
+
+  // Notify parent component when viewer state changes
+  useEffect(() => {
+    onViewerStateChange?.(!!selectedDocument)
+  }, [selectedDocument, onViewerStateChange])
 
   useEffect(() => {
     fetchDocuments()
