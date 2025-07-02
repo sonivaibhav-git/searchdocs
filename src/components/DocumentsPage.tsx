@@ -27,54 +27,9 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [downloading, setDownloading] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
-  const [isMobile, setIsMobile] = useState(false)
-
-  // Check if mobile device
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768)
-    }
-    
-    checkMobile()
-    window.addEventListener('resize', checkMobile)
-    return () => window.removeEventListener('resize', checkMobile)
-  }, [])
-
-  // Handle browser back button on mobile
-  useEffect(() => {
-    const handlePopState = (event: PopStateEvent) => {
-      event.preventDefault()
-      onClose()
-    }
-
-    // Push a state when viewer opens
-    window.history.pushState({ viewerOpen: true }, '', window.location.href)
-    window.addEventListener('popstate', handlePopState)
-
-    return () => {
-      window.removeEventListener('popstate', handlePopState)
-      // Go back to remove the pushed state
-      if (window.history.state?.viewerOpen) {
-        window.history.back()
-      }
-    }
-  }, [onClose])
-
-  // Prevent body scroll when viewer is open
-  useEffect(() => {
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.body.style.overflow = 'unset'
-    }
-  }, [])
 
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
     setNumPages(numPages)
-    // Auto-fit for mobile
-    if (isMobile) {
-      setScale(0.8)
-      setZoomInput('80')
-    }
   }
 
   const handleZoomIn = () => {
@@ -90,9 +45,8 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
   }
 
   const resetZoom = () => {
-    const defaultScale = isMobile ? 0.8 : 1.0
-    setScale(defaultScale)
-    setZoomInput(Math.round(defaultScale * 100).toString())
+    setScale(1.0)
+    setZoomInput('100')
   }
 
   const handleZoomInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -215,39 +169,20 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
     }
   }
 
-  // Handle scroll for page navigation with continuous scroll
+  // Handle scroll for page navigation
   const handleScroll = (e: React.WheelEvent) => {
     if (e.ctrlKey || e.metaKey) return // Allow zoom with Ctrl+scroll
     
-    const container = e.currentTarget
-    const scrollTop = container.scrollTop
-    const scrollHeight = container.scrollHeight
-    const clientHeight = container.clientHeight
-    
-    // Calculate which page should be visible based on scroll position
-    const pageHeight = scrollHeight / numPages
-    const currentPageFromScroll = Math.floor(scrollTop / pageHeight) + 1
-    
-    if (currentPageFromScroll !== pageNumber && currentPageFromScroll >= 1 && currentPageFromScroll <= numPages) {
-      setPageNumber(currentPageFromScroll)
-      setPageInput(currentPageFromScroll.toString())
-    }
-  }
-
-  // Handle touch scroll for mobile
-  const handleTouchScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const container = e.currentTarget
-    const scrollTop = container.scrollTop
-    const scrollHeight = container.scrollHeight
-    
-    if (numPages > 0) {
-      const pageHeight = scrollHeight / numPages
-      const currentPageFromScroll = Math.floor(scrollTop / pageHeight) + 1
-      
-      if (currentPageFromScroll !== pageNumber && currentPageFromScroll >= 1 && currentPageFromScroll <= numPages) {
-        setPageNumber(currentPageFromScroll)
-        setPageInput(currentPageFromScroll.toString())
-      }
+    if (e.deltaY > 0 && pageNumber < numPages) {
+      // Scroll down - next page
+      const newPage = pageNumber + 1
+      setPageNumber(newPage)
+      setPageInput(newPage.toString())
+    } else if (e.deltaY < 0 && pageNumber > 1) {
+      // Scroll up - previous page
+      const newPage = pageNumber - 1
+      setPageNumber(newPage)
+      setPageInput(newPage.toString())
     }
   }
 
@@ -256,12 +191,6 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
       return {
         width: window.innerWidth * 0.95,
         height: window.innerHeight * 0.85
-      }
-    }
-    if (isMobile) {
-      return {
-        width: window.innerWidth * 0.95,
-        height: window.innerHeight * 0.7
       }
     }
     return {
@@ -314,10 +243,11 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
             </div>
             
             <div className="flex items-center space-x-1 md:space-x-2 flex-shrink-0">
+              {/* Zoom Controls */}
               <button
                 onClick={resetZoom}
                 className="p-1 md:p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors"
-                title="Reset zoom"
+                title="Reset zoom to 100%"
               >
                 <RotateCcw className="w-3 h-3 md:w-4 md:h-4" />
               </button>
@@ -397,49 +327,76 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-hidden bg-gray-100 dark:bg-dark-bg flex flex-col items-center justify-start transition-colors duration-200 relative">
+          <div className="flex-1 overflow-hidden bg-gray-100 dark:bg-dark-bg flex flex-col items-center justify-center p-2 md:p-4 transition-colors duration-200 relative">
             {doc.file_type === 'pdf' && doc.file_url ? (
-              <div 
-                className="w-full h-full overflow-auto bg-gray-100 dark:bg-dark-bg flex flex-col items-center py-4 space-y-4"
-                onScroll={isMobile ? handleTouchScroll : undefined}
-                onWheel={!isMobile ? handleScroll : undefined}
-                style={{ 
-                  scrollBehavior: 'smooth',
-                  WebkitOverflowScrolling: 'touch' // Enable smooth scrolling on iOS
-                }}
-              >
-                <PDFDocument
-                  file={doc.file_url}
-                  onLoadSuccess={onDocumentLoadSuccess}
-                  loading={
-                    <div className="flex items-center justify-center p-4 md:p-8">
-                      <div className="animate-spin rounded-full h-6 w-6 md:h-8 md:w-8 border-b-2 border-blue-600 dark:border-accent-primary"></div>
-                      <span className="ml-2 text-gray-600 dark:text-gray-300 text-sm md:text-base">Loading PDF...</span>
-                    </div>
-                  }
-                  error={
-                    <div className="flex items-center justify-center p-4 md:p-8 text-red-600 dark:text-accent-warning">
-                      <span className="text-sm md:text-base">Failed to load PDF. Please try downloading the file.</span>
-                    </div>
-                  }
+              <>
+                <div 
+                  className="bg-white shadow-lg rounded-lg overflow-hidden flex-1 flex items-center justify-center w-full"
+                  onWheel={handleScroll}
                 >
-                  {/* Render all pages for continuous scroll */}
-                  {Array.from(new Array(numPages), (el, index) => (
-                    <div key={`page_${index + 1}`} className="mb-4 shadow-lg bg-white rounded">
-                      <Page
-                        pageNumber={index + 1}
-                        scale={scale}
-                        renderTextLayer={true}
-                        renderAnnotationLayer={true}
-                        width={Math.min(viewerDimensions.width, window.innerWidth - 32)}
-                        className="mx-auto"
+                  <PDFDocument
+                    file={doc.file_url}
+                    onLoadSuccess={onDocumentLoadSuccess}
+                    loading={
+                      <div className="flex items-center justify-center p-4 md:p-8">
+                        <div className="animate-spin rounded-full h-6 w-6 md:h-8 md:w-8 border-b-2 border-blue-600 dark:border-accent-primary"></div>
+                        <span className="ml-2 text-gray-600 dark:text-gray-300 text-sm md:text-base">Loading PDF...</span>
+                      </div>
+                    }
+                    error={
+                      <div className="flex items-center justify-center p-4 md:p-8 text-red-600 dark:text-accent-warning">
+                        <span className="text-sm md:text-base">Failed to load PDF. Please try downloading the file.</span>
+                      </div>
+                    }
+                  >
+                    <Page
+                      pageNumber={pageNumber}
+                      scale={scale}
+                      renderTextLayer={true}
+                      renderAnnotationLayer={true}
+                      width={Math.min(viewerDimensions.width, window.innerWidth - 32)}
+                    />
+                  </PDFDocument>
+                </div>
+
+                {/* Page Navigation - Bottom Center */}
+                {numPages > 0 && (
+                  <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center space-x-2 bg-black bg-opacity-75 text-white px-3 py-2 rounded-lg">
+                    <button
+                      onClick={goToPrevPage}
+                      disabled={pageNumber <= 1}
+                      className="p-1 hover:bg-white hover:bg-opacity-20 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Previous page"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    
+                    <form onSubmit={handlePageInputSubmit} className="flex items-center">
+                      <input
+                        type="text"
+                        value={pageInput}
+                        onChange={handlePageInputChange}
+                        onBlur={handlePageInputBlur}
+                        className="w-8 sm:w-12 text-xs sm:text-sm text-center bg-white bg-opacity-20 text-white px-1 py-1 rounded border-0 focus:ring-2 focus:ring-white focus:ring-opacity-50"
+                        title="Enter page number"
                       />
-                    </div>
-                  ))}
-                </PDFDocument>
-              </div>
+                      <span className="text-xs sm:text-sm mx-1">/</span>
+                      <span className="text-xs sm:text-sm">{numPages}</span>
+                    </form>
+                    
+                    <button
+                      onClick={goToNextPage}
+                      disabled={pageNumber >= numPages}
+                      className="p-1 hover:bg-white hover:bg-opacity-20 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Next page"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+              </>
             ) : (
-              <div className="bg-white dark:bg-dark-card rounded-lg p-4 md:p-6 max-w-4xl w-full max-h-full overflow-auto shadow-lg transition-colors duration-200 m-4">
+              <div className="bg-white dark:bg-dark-card rounded-lg p-4 md:p-6 max-w-4xl w-full max-h-full overflow-auto shadow-lg transition-colors duration-200">
                 <h4 className="text-base md:text-lg font-medium text-gray-900 dark:text-dark-text mb-4 border-b border-gray-200 dark:border-gray-600 pb-2">Extracted Text Content</h4>
                 <div 
                   className="prose prose-sm max-w-none text-gray-700 dark:text-gray-300 leading-relaxed"
@@ -453,44 +410,6 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
                     <p className="text-gray-500 dark:text-gray-400 italic text-center py-8">No text content available</p>
                   )}
                 </div>
-              </div>
-            )}
-
-            {/* Page Navigation - Bottom Center */}
-            {numPages > 0 && (
-              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center space-x-2 bg-black bg-opacity-75 text-white px-3 py-2 rounded-lg z-10">
-                <button
-                  onClick={goToPrevPage}
-                  disabled={pageNumber <= 1}
-                  className="p-1 hover:bg-white hover:bg-opacity-20 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Previous page"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                
-                <form onSubmit={handlePageInputSubmit} className="flex items-center">
-                  <input
-                    type="number"
-                    min="1"
-                    max={numPages}
-                    value={pageInput}
-                    onChange={handlePageInputChange}
-                    onBlur={handlePageInputBlur}
-                    className="w-8 sm:w-12 text-xs sm:text-sm text-center bg-white bg-opacity-20 text-white px-1 py-1 rounded border-0 focus:ring-2 focus:ring-white focus:ring-opacity-50"
-                    title="Enter page number"
-                  />
-                  <span className="text-xs sm:text-sm mx-1">/</span>
-                  <span className="text-xs sm:text-sm">{numPages}</span>
-                </form>
-                
-                <button
-                  onClick={goToNextPage}
-                  disabled={pageNumber >= numPages}
-                  className="p-1 hover:bg-white hover:bg-opacity-20 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Next page"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
               </div>
             )}
           </div>

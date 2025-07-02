@@ -13,7 +13,6 @@ import { DocumentViewerPage } from './components/DocumentViewerPage'
 function AppContent() {
   const { user, loading } = useAuth()
   const [currentPage, setCurrentPage] = useState('search')
-  const [isViewerOpen, setIsViewerOpen] = useState(false)
 
   if (loading) {
     return (
@@ -45,11 +44,7 @@ function AppContent() {
       <Routes>
         {/* Main app routes */}
         <Route path="/" element={
-          <Layout 
-            currentPage={currentPage} 
-            onPageChange={setCurrentPage}
-            hideBottomNav={isViewerOpen}
-          >
+          <Layout currentPage={currentPage} onPageChange={setCurrentPage}>
             {renderPage()}
           </Layout>
         } />

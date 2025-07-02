@@ -8,10 +8,9 @@ interface LayoutProps {
   children: React.ReactNode
   currentPage?: string
   onPageChange?: (page: string) => void
-  hideBottomNav?: boolean
 }
 
-export function Layout({ children, currentPage = 'search', onPageChange, hideBottomNav = false }: LayoutProps) {
+export function Layout({ children, currentPage = 'search', onPageChange }: LayoutProps) {
   const { user, signOut } = useAuth()
   const [showProfile, setShowProfile] = React.useState(false)
   const [showDropdown, setShowDropdown] = React.useState(false)
@@ -178,30 +177,28 @@ export function Layout({ children, currentPage = 'search', onPageChange, hideBot
           {children}
         </main>
 
-        {/* Mobile Bottom Navigation - Hide when hideBottomNav is true */}
-        {!hideBottomNav && (
-          <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-dark-card border-t border-gray-200 dark:border-gray-700 md:hidden z-50 safe-area-inset-bottom transition-colors duration-200">
-            <div className="grid grid-cols-3 h-16">
-              {navItems.map((item) => {
-                const Icon = item.icon
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => onPageChange?.(item.id)}
-                    className={`flex flex-col items-center justify-center space-y-1 transition-colors ${
-                      currentPage === item.id
-                        ? 'text-blue-600 dark:text-accent-primary bg-blue-50 dark:bg-accent-primary/20'
-                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-dark-text hover:bg-gray-50 dark:hover:bg-dark-search'
-                    }`}
-                  >
-                    <Icon className="w-5 h-5" />
-                    <span className="text-xs font-medium">{item.label}</span>
-                  </button>
-                )
-              })}
-            </div>
-          </nav>
-        )}
+        {/* Mobile Bottom Navigation */}
+        <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-dark-card border-t border-gray-200 dark:border-gray-700 md:hidden z-50 safe-area-inset-bottom transition-colors duration-200">
+          <div className="grid grid-cols-3 h-16">
+            {navItems.map((item) => {
+              const Icon = item.icon
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => onPageChange?.(item.id)}
+                  className={`flex flex-col items-center justify-center space-y-1 transition-colors ${
+                    currentPage === item.id
+                      ? 'text-blue-600 dark:text-accent-primary bg-blue-50 dark:bg-accent-primary/20'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-dark-text hover:bg-gray-50 dark:hover:bg-dark-search'
+                  }`}
+                >
+                  <Icon className="w-5 h-5" />
+                  <span className="text-xs font-medium">{item.label}</span>
+                </button>
+              )
+            })}
+          </div>
+        </nav>
       </div>
 
       {showProfile && (
