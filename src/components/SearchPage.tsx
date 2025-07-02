@@ -530,11 +530,7 @@ const getTagColor = (tag: string, index: number) => {
   return colors[colorIndex]
 }
 
-interface SearchPageProps {
-  onViewerStateChange?: (isOpen: boolean) => void
-}
-
-export function SearchPage({ onViewerStateChange }: SearchPageProps) {
+export function SearchPage() {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<DocumentWithProfile[]>([])
   const [allDocuments, setAllDocuments] = useState<DocumentWithProfile[]>([])
@@ -549,11 +545,6 @@ export function SearchPage({ onViewerStateChange }: SearchPageProps) {
   const [error, setError] = useState<string | null>(null)
   const { user } = useAuth()
   const searchToast = useSearchToast()
-
-  // Notify parent component when viewer state changes
-  useEffect(() => {
-    onViewerStateChange?.(!!selectedDocument)
-  }, [selectedDocument, onViewerStateChange])
 
   useEffect(() => {
     fetchAllDocuments()

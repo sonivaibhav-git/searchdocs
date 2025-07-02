@@ -30,13 +30,13 @@ function AppContent() {
   const renderPage = () => {
     switch (currentPage) {
       case 'search':
-        return <SearchPage onViewerStateChange={setIsViewerOpen} />
+        return <SearchPage />
       case 'upload':
         return <UploadPage />
       case 'documents':
-        return <DocumentsPage onViewerStateChange={setIsViewerOpen} />
+        return <DocumentsPage />
       default:
-        return <SearchPage onViewerStateChange={setIsViewerOpen} />
+        return <SearchPage />
     }
   }
 
