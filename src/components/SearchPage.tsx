@@ -65,9 +65,18 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
     
     const updateDimensions = () => {
       checkMobile()
+      
+      // Calculate container dimensions based on viewport
+      const headerHeight = isMobile ? 80 : 100 // Top navbar height
+      const pageNavHeight = 60 // Bottom page navigation height
+      const padding = 32 // Container padding
+      
+      const availableWidth = window.innerWidth - padding
+      const availableHeight = window.innerHeight - headerHeight - pageNavHeight - padding
+      
       setContainerDimensions({
-        width: window.innerWidth,
-        height: window.innerHeight
+        width: availableWidth,
+        height: availableHeight
       })
     }
 
@@ -79,37 +88,37 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
       window.removeEventListener('resize', updateDimensions)
       window.removeEventListener('orientationchange', updateDimensions)
     }
-  }, [])
+  }, [isMobile])
 
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
     setNumPages(numPages)
-    // Auto-fit document to screen on load with optimal scaling
-    const optimalScale = calculateOptimalScale()
+    // Auto-fit document to container on load
+    const optimalScale = calculateContainerFitScale()
     setScale(optimalScale)
     setZoomInput(Math.round(optimalScale * 100).toString())
   }
 
-  const calculateOptimalScale = () => {
-    // Calculate available space: full height minus header (with 1em spacing) and page navigation
-    const headerHeight = isMobile ? 80 : 100 // Approximate header height
-    const oneEmInPixels = 16 // 1em = 16px typically
-    const pageNavHeight = 60 // Page navigation height
-    const padding = isMobile ? 16 : 32 // Side padding
-    
-    const availableHeight = containerDimensions.height - headerHeight - oneEmInPixels - pageNavHeight
-    const availableWidth = containerDimensions.width - padding
-    
+  const calculateContainerFitScale = () => {
+    if (containerDimensions.width === 0 || containerDimensions.height === 0) {
+      return isMobile ? 0.8 : 1.0
+    }
+
     // Standard PDF page ratio is approximately 8.5:11 (0.77)
     const pageRatio = 0.77
+    const containerRatio = containerDimensions.width / containerDimensions.height
     
-    // Calculate scale based on both width and height constraints
-    const scaleByWidth = availableWidth / (availableWidth * pageRatio)
-    const scaleByHeight = availableHeight / (availableHeight / pageRatio)
+    let optimalScale: number
     
-    // Use the smaller scale to ensure the document fits completely
-    const optimalScale = Math.min(scaleByWidth, scaleByHeight, isMobile ? 0.9 : 1.2)
+    if (containerRatio > pageRatio) {
+      // Container is wider than page ratio, fit by height
+      optimalScale = containerDimensions.height / (containerDimensions.height / 0.9)
+    } else {
+      // Container is taller than page ratio, fit by width
+      optimalScale = containerDimensions.width / (containerDimensions.width / 0.9)
+    }
     
-    return Math.max(0.5, Math.min(optimalScale, 2.0)) // Clamp between 0.5 and 2.0
+    // Ensure scale is within reasonable bounds
+    return Math.max(0.3, Math.min(optimalScale, isMobile ? 1.2 : 1.5))
   }
 
   const handleZoomIn = () => {
@@ -125,7 +134,7 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
   }
 
   const resetZoom = () => {
-    const optimalScale = calculateOptimalScale()
+    const optimalScale = calculateContainerFitScale()
     setScale(optimalScale)
     setZoomInput(Math.round(optimalScale * 100).toString())
   }
@@ -301,19 +310,16 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
     }
   }
 
-  const getOptimalPageWidth = () => {
-    // Calculate width to fit the full screen with 1em spacing below header
-    const padding = isMobile ? 16 : 32 // Side padding
-    const availableWidth = containerDimensions.width - padding
-    
-    // Return width that will fit the screen optimally
-    return Math.min(availableWidth * 0.98, 1200) // Max width of 1200px for very large screens
+  const getDocumentWidth = () => {
+    // Calculate width based on container and scale
+    const baseWidth = Math.min(containerDimensions.width * 0.9, 800)
+    return baseWidth
   }
 
   return (
     <>
       <div className="fixed inset-0 bg-black bg-opacity-75 flex flex-col z-50 overflow-hidden">
-        {/* Header */}
+        {/* Top Navbar */}
         <div className="flex items-center justify-between p-2 sm:p-3 md:p-4 border-b border-gray-600 bg-gray-900 flex-shrink-0">
           <div className="flex items-center space-x-2 md:space-x-3 min-w-0 flex-1">
             {doc.file_type === 'pdf' ? (
@@ -344,7 +350,7 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
             <button
               onClick={resetZoom}
               className="p-1 md:p-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded-md transition-colors"
-              title="Fit to screen"
+              title="Fit to container"
             >
               <RotateCcw className="w-3 h-3 md:w-4 md:h-4" />
             </button>
@@ -423,25 +429,31 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
           </div>
         </div>
 
-        {/* Content with 1em spacing below header */}
+        {/* Document Container - Just below the top navbar */}
         <div 
-          className="flex-1 overflow-hidden bg-gray-900 flex flex-col items-center justify-center relative"
-          style={{ marginTop: '1em' }} // 1em spacing below header
+          className="flex-1 bg-gray-900 flex items-center justify-center relative overflow-hidden"
+          style={{
+            width: '100vw',
+            height: `${containerDimensions.height}px`,
+            maxHeight: `calc(100vh - ${isMobile ? 80 : 100}px - 60px)` // Subtract navbar and page nav heights
+          }}
         >
           {doc.file_type === 'pdf' && doc.file_url ? (
             <>
               <div 
-                className="flex-1 flex items-center justify-center w-full h-full overflow-auto"
+                className="w-full h-full flex items-center justify-center overflow-auto bg-gray-800 border border-gray-600 rounded-lg m-4"
                 onWheel={handleScroll}
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
                 style={{ 
                   scrollBehavior: 'smooth',
-                  WebkitOverflowScrolling: 'touch'
+                  WebkitOverflowScrolling: 'touch',
+                  width: `${containerDimensions.width}px`,
+                  height: `${containerDimensions.height}px`
                 }}
               >
-                <div className="flex items-center justify-center p-2 md:p-4 w-full h-full">
+                <div className="flex items-center justify-center p-4">
                   <PDFDocument
                     file={doc.file_url}
                     onLoadSuccess={onDocumentLoadSuccess}
@@ -462,8 +474,8 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
                       scale={scale}
                       renderTextLayer={true}
                       renderAnnotationLayer={true}
-                      width={getOptimalPageWidth()}
-                      className="shadow-2xl max-w-full max-h-full object-contain"
+                      width={getDocumentWidth()}
+                      className="shadow-2xl bg-white rounded"
                     />
                   </PDFDocument>
                 </div>
@@ -508,7 +520,13 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
               )}
             </>
           ) : (
-            <div className="bg-gray-800 rounded-lg p-4 md:p-6 max-w-4xl w-full max-h-full overflow-auto shadow-lg m-4">
+            <div 
+              className="bg-gray-800 rounded-lg p-4 md:p-6 w-full h-full overflow-auto shadow-lg border border-gray-600 m-4"
+              style={{
+                width: `${containerDimensions.width}px`,
+                height: `${containerDimensions.height}px`
+              }}
+            >
               <h4 className="text-base md:text-lg font-medium text-white mb-4 border-b border-gray-600 pb-2">Extracted Text Content</h4>
               <div 
                 className="prose prose-sm max-w-none text-gray-300 leading-relaxed"
