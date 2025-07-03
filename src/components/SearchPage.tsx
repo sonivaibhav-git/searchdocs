@@ -83,14 +83,33 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
 
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
     setNumPages(numPages)
-    // Auto-fit document to screen on load
-    if (isMobile) {
-      setScale(0.8) // Slightly smaller for mobile to ensure full visibility
-      setZoomInput('80')
-    } else {
-      setScale(1.0)
-      setZoomInput('100')
-    }
+    // Auto-fit document to screen on load with optimal scaling
+    const optimalScale = calculateOptimalScale()
+    setScale(optimalScale)
+    setZoomInput(Math.round(optimalScale * 100).toString())
+  }
+
+  const calculateOptimalScale = () => {
+    // Calculate available space: full height minus header (with 1em spacing) and page navigation
+    const headerHeight = isMobile ? 80 : 100 // Approximate header height
+    const oneEmInPixels = 16 // 1em = 16px typically
+    const pageNavHeight = 60 // Page navigation height
+    const padding = isMobile ? 16 : 32 // Side padding
+    
+    const availableHeight = containerDimensions.height - headerHeight - oneEmInPixels - pageNavHeight
+    const availableWidth = containerDimensions.width - padding
+    
+    // Standard PDF page ratio is approximately 8.5:11 (0.77)
+    const pageRatio = 0.77
+    
+    // Calculate scale based on both width and height constraints
+    const scaleByWidth = availableWidth / (availableWidth * pageRatio)
+    const scaleByHeight = availableHeight / (availableHeight / pageRatio)
+    
+    // Use the smaller scale to ensure the document fits completely
+    const optimalScale = Math.min(scaleByWidth, scaleByHeight, isMobile ? 0.9 : 1.2)
+    
+    return Math.max(0.5, Math.min(optimalScale, 2.0)) // Clamp between 0.5 and 2.0
   }
 
   const handleZoomIn = () => {
@@ -106,9 +125,9 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
   }
 
   const resetZoom = () => {
-    const newScale = isMobile ? 0.8 : 1.0
-    setScale(newScale)
-    setZoomInput(Math.round(newScale * 100).toString())
+    const optimalScale = calculateOptimalScale()
+    setScale(optimalScale)
+    setZoomInput(Math.round(optimalScale * 100).toString())
   }
 
   const handleZoomInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -283,14 +302,12 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
   }
 
   const getOptimalPageWidth = () => {
-    const availableWidth = containerDimensions.width - (isMobile ? 32 : 64) // Account for padding
-    const availableHeight = containerDimensions.height - (isMobile ? 120 : 160) // Account for header and controls
+    // Calculate width to fit the full screen with 1em spacing below header
+    const padding = isMobile ? 16 : 32 // Side padding
+    const availableWidth = containerDimensions.width - padding
     
-    if (isMobile) {
-      return Math.min(availableWidth * 0.95, 400) // Ensure it fits with some margin
-    }
-    
-    return Math.min(availableWidth * 0.9, 800)
+    // Return width that will fit the screen optimally
+    return Math.min(availableWidth * 0.98, 1200) // Max width of 1200px for very large screens
   }
 
   return (
@@ -327,7 +344,7 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
             <button
               onClick={resetZoom}
               className="p-1 md:p-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded-md transition-colors"
-              title="Reset zoom"
+              title="Fit to screen"
             >
               <RotateCcw className="w-3 h-3 md:w-4 md:h-4" />
             </button>
@@ -406,8 +423,11 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
           </div>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-hidden bg-gray-900 flex flex-col items-center justify-center relative">
+        {/* Content with 1em spacing below header */}
+        <div 
+          className="flex-1 overflow-hidden bg-gray-900 flex flex-col items-center justify-center relative"
+          style={{ marginTop: '1em' }} // 1em spacing below header
+        >
           {doc.file_type === 'pdf' && doc.file_url ? (
             <>
               <div 
@@ -421,7 +441,7 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
                   WebkitOverflowScrolling: 'touch'
                 }}
               >
-                <div className="flex items-center justify-center p-2 md:p-4">
+                <div className="flex items-center justify-center p-2 md:p-4 w-full h-full">
                   <PDFDocument
                     file={doc.file_url}
                     onLoadSuccess={onDocumentLoadSuccess}
@@ -443,7 +463,7 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
                       renderTextLayer={true}
                       renderAnnotationLayer={true}
                       width={getOptimalPageWidth()}
-                      className="shadow-2xl"
+                      className="shadow-2xl max-w-full max-h-full object-contain"
                     />
                   </PDFDocument>
                 </div>
