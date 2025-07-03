@@ -178,7 +178,10 @@ export function Layout({ children, currentPage = 'search', onPageChange }: Layou
         </main>
 
         {/* Mobile Bottom Navigation */}
-        <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-dark-card border-t border-gray-200 dark:border-gray-700 md:hidden z-50 safe-area-inset-bottom transition-colors duration-200">
+        <nav 
+          data-bottom-nav
+          className="fixed bottom-0 left-0 right-0 bg-white dark:bg-dark-card border-t border-gray-200 dark:border-gray-700 md:hidden z-50 safe-area-inset-bottom transition-colors duration-200"
+        >
           <div className="grid grid-cols-3 h-16">
             {navItems.map((item) => {
               const Icon = item.icon

@@ -27,9 +27,71 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [downloading, setDownloading] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
+  const [containerDimensions, setContainerDimensions] = useState({ width: 0, height: 0 })
+  const [isMobile, setIsMobile] = useState(false)
+
+  // Prevent background scrolling when viewer is open
+  useEffect(() => {
+    // Disable scrolling on body
+    document.body.style.overflow = 'hidden'
+    document.body.style.position = 'fixed'
+    document.body.style.width = '100%'
+    document.body.style.height = '100%'
+    
+    // Hide bottom navbar on mobile
+    const bottomNav = document.querySelector('[data-bottom-nav]')
+    if (bottomNav) {
+      (bottomNav as HTMLElement).style.display = 'none'
+    }
+
+    return () => {
+      // Re-enable scrolling when component unmounts
+      document.body.style.overflow = ''
+      document.body.style.position = ''
+      document.body.style.width = ''
+      document.body.style.height = ''
+      
+      // Show bottom navbar again
+      if (bottomNav) {
+        (bottomNav as HTMLElement).style.display = ''
+      }
+    }
+  }, [])
+
+  // Check if mobile and update container dimensions
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768)
+    }
+    
+    const updateDimensions = () => {
+      checkMobile()
+      setContainerDimensions({
+        width: window.innerWidth,
+        height: window.innerHeight
+      })
+    }
+
+    updateDimensions()
+    window.addEventListener('resize', updateDimensions)
+    window.addEventListener('orientationchange', updateDimensions)
+
+    return () => {
+      window.removeEventListener('resize', updateDimensions)
+      window.removeEventListener('orientationchange', updateDimensions)
+    }
+  }, [])
 
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
     setNumPages(numPages)
+    // Auto-fit document to screen on load
+    if (isMobile) {
+      setScale(0.8) // Slightly smaller for mobile to ensure full visibility
+      setZoomInput('80')
+    } else {
+      setScale(1.0)
+      setZoomInput('100')
+    }
   }
 
   const handleZoomIn = () => {
@@ -45,8 +107,9 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
   }
 
   const resetZoom = () => {
-    setScale(1.0)
-    setZoomInput('100')
+    const newScale = isMobile ? 0.8 : 1.0
+    setScale(newScale)
+    setZoomInput(Math.round(newScale * 100).toString())
   }
 
   const handleZoomInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -169,182 +232,208 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
     }
   }
 
-  // Handle scroll for page navigation
-  const handleScroll = (e: React.WheelEvent) => {
-    if (e.ctrlKey || e.metaKey) return // Allow zoom with Ctrl+scroll
+  // Handle scroll for page navigation (both desktop and mobile)
+  const handleScroll = (e: React.WheelEvent | React.TouchEvent) => {
+    e.preventDefault() // Prevent background scrolling
     
-    if (e.deltaY > 0 && pageNumber < numPages) {
-      // Scroll down - next page
+    if ('deltaY' in e) {
+      // Mouse wheel event
+      if (e.deltaY > 0 && pageNumber < numPages) {
+        const newPage = pageNumber + 1
+        setPageNumber(newPage)
+        setPageInput(newPage.toString())
+      } else if (e.deltaY < 0 && pageNumber > 1) {
+        const newPage = pageNumber - 1
+        setPageNumber(newPage)
+        setPageInput(newPage.toString())
+      }
+    }
+  }
+
+  // Touch handling for mobile
+  const [touchStart, setTouchStart] = useState<number | null>(null)
+  const [touchEnd, setTouchEnd] = useState<number | null>(null)
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null)
+    setTouchStart(e.targetTouches[0].clientY)
+  }
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientY)
+  }
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return
+    
+    const distance = touchStart - touchEnd
+    const isUpSwipe = distance > 50
+    const isDownSwipe = distance < -50
+
+    if (isUpSwipe && pageNumber < numPages) {
       const newPage = pageNumber + 1
       setPageNumber(newPage)
       setPageInput(newPage.toString())
-    } else if (e.deltaY < 0 && pageNumber > 1) {
-      // Scroll up - previous page
+    }
+    
+    if (isDownSwipe && pageNumber > 1) {
       const newPage = pageNumber - 1
       setPageNumber(newPage)
       setPageInput(newPage.toString())
     }
   }
 
-  const getViewerDimensions = () => {
-    if (isFullscreen) {
-      return {
-        width: window.innerWidth * 0.95,
-        height: window.innerHeight * 0.85
-      }
+  const getOptimalPageWidth = () => {
+    const availableWidth = containerDimensions.width - (isMobile ? 32 : 64) // Account for padding
+    const availableHeight = containerDimensions.height - (isMobile ? 120 : 160) // Account for header and controls
+    
+    if (isMobile) {
+      return Math.min(availableWidth * 0.95, 400) // Ensure it fits with some margin
     }
-    return {
-      width: Math.min(window.innerWidth * 0.9, 1200),
-      height: Math.min(window.innerHeight * 0.7, 800)
-    }
+    
+    return Math.min(availableWidth * 0.9, 800)
   }
-
-  const viewerDimensions = getViewerDimensions()
 
   return (
     <>
-      <div className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 ${isFullscreen ? 'p-0' : 'p-2 md:p-4'}`}>
-        <div className={`bg-white dark:bg-dark-card rounded-lg shadow-2xl flex flex-col ${
-          isFullscreen 
-            ? 'w-full h-full rounded-none' 
-            : 'w-full max-w-7xl h-[95vh]'
-        } transition-colors duration-200`}>
-          {/* Header */}
-          <div className="flex items-center justify-between p-2 sm:p-3 md:p-4 border-b border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-dark-search rounded-t-lg flex-shrink-0 transition-colors duration-200">
-            <div className="flex items-center space-x-2 md:space-x-3 min-w-0 flex-1">
-              {doc.file_type === 'pdf' ? (
-                <FileText className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-red-500 flex-shrink-0" />
-              ) : (
-                <Image className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-blue-500 flex-shrink-0" />
-              )}
-              <div className="min-w-0 flex-1">
-                <h3 className="text-xs sm:text-sm md:text-lg font-semibold text-gray-900 dark:text-dark-text truncate">{doc.title}</h3>
-                <div className="flex items-center space-x-1 md:space-x-2 text-xs md:text-sm text-gray-500 dark:text-gray-400">
-                  <span className="hidden sm:inline">{new Date(doc.created_at).toLocaleDateString()}</span>
-                  <span className="hidden sm:inline">•</span>
-                  <span>{formatFileSize(doc.file_size)}</span>
-                  <span className="hidden md:inline">•</span>
-                  <div className="hidden md:flex items-center space-x-1">
-                    {doc.is_public ? (
-                      <Globe className="w-3 h-3 text-green-600 dark:text-accent-success" />
-                    ) : (
-                      <Lock className="w-3 h-3 text-gray-600 dark:text-gray-400" />
-                    )}
-                    <span>{doc.is_public ? 'Public' : 'Private'}</span>
-                  </div>
-                  {doc.user_profiles && (
-                    <>
-                      <span className="hidden lg:inline">•</span>
-                      <span className="hidden lg:inline">by @{doc.user_profiles.username}</span>
-                    </>
+      <div className="fixed inset-0 bg-black bg-opacity-75 flex flex-col z-50 overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between p-2 sm:p-3 md:p-4 border-b border-gray-600 bg-gray-900 flex-shrink-0">
+          <div className="flex items-center space-x-2 md:space-x-3 min-w-0 flex-1">
+            {doc.file_type === 'pdf' ? (
+              <FileText className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-red-500 flex-shrink-0" />
+            ) : (
+              <Image className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-blue-500 flex-shrink-0" />
+            )}
+            <div className="min-w-0 flex-1">
+              <h3 className="text-xs sm:text-sm md:text-lg font-semibold text-white truncate">{doc.title}</h3>
+              <div className="flex items-center space-x-1 md:space-x-2 text-xs md:text-sm text-gray-300">
+                <span className="hidden sm:inline">{new Date(doc.created_at).toLocaleDateString()}</span>
+                <span className="hidden sm:inline">•</span>
+                <span>{formatFileSize(doc.file_size)}</span>
+                <span className="hidden md:inline">•</span>
+                <div className="hidden md:flex items-center space-x-1">
+                  {doc.is_public ? (
+                    <Globe className="w-3 h-3 text-green-400" />
+                  ) : (
+                    <Lock className="w-3 h-3 text-gray-400" />
                   )}
+                  <span>{doc.is_public ? 'Public' : 'Private'}</span>
                 </div>
               </div>
             </div>
-            
-            <div className="flex items-center space-x-1 md:space-x-2 flex-shrink-0">
-              {/* Zoom Controls */}
-              <button
-                onClick={resetZoom}
-                className="p-1 md:p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors"
-                title="Reset zoom to 100%"
-              >
-                <RotateCcw className="w-3 h-3 md:w-4 md:h-4" />
-              </button>
-              
-              <button
-                onClick={handleZoomOut}
-                className="p-1 md:p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors"
-                title="Zoom out"
-              >
-                <ZoomOut className="w-3 h-3 md:w-4 md:h-4" />
-              </button>
-              
-              <form onSubmit={handleZoomInputSubmit} className="flex items-center">
-                <input
-                  type="text"
-                  value={zoomInput}
-                  onChange={handleZoomInputChange}
-                  onBlur={handleZoomInputBlur}
-                  className="w-8 sm:w-12 md:w-16 text-xs md:text-sm text-center bg-white dark:bg-dark-card text-gray-900 dark:text-dark-text px-1 md:px-2 py-1 rounded border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 dark:focus:ring-accent-primary focus:border-transparent"
-                  title="Enter zoom percentage (25-500%)"
-                />
-                <span className="text-xs md:text-sm text-gray-600 dark:text-gray-300 ml-1">%</span>
-              </form>
-              
-              <button
-                onClick={handleZoomIn}
-                className="p-1 md:p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors"
-                title="Zoom in"
-              >
-                <ZoomIn className="w-3 h-3 md:w-4 md:h-4" />
-              </button>
-
-              <button
-                onClick={toggleFullscreen}
-                className="p-1 md:p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors"
-                title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-              >
-                <Expand className="w-3 h-3 md:w-4 md:h-4" />
-              </button>
-
-              <button
-                onClick={() => setShowShareModal(true)}
-                className="p-1 md:p-2 text-blue-600 dark:text-accent-primary hover:text-blue-700 dark:hover:text-accent-primary/80 hover:bg-blue-50 dark:hover:bg-accent-primary/10 rounded-md transition-colors"
-                title="Share document"
-              >
-                <Share2 className="w-3 h-3 md:w-4 md:h-4" />
-              </button>
-              
-              {doc.file_url && (
-                <button
-                  onClick={handleDirectDownload}
-                  disabled={downloading}
-                  className="flex items-center space-x-1 px-2 md:px-3 py-1 md:py-2 text-xs md:text-sm text-white bg-blue-600 dark:bg-accent-primary hover:bg-blue-700 dark:hover:bg-accent-primary/90 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Download PDF directly to your device"
-                >
-                  {downloading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-3 w-3 md:h-4 md:w-4 border-b-2 border-white"></div>
-                      <span className="hidden sm:inline">Downloading...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Download className="w-3 h-3 md:w-4 md:h-4" />
-                      <span className="hidden sm:inline">Download</span>
-                    </>
-                  )}
-                </button>
-              )}
-              
-              <button
-                onClick={onClose}
-                className="p-1 md:p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors ml-1 md:ml-2"
-              >
-                <X className="w-4 h-4 md:w-5 md:h-5" />
-              </button>
-            </div>
           </div>
+          
+          <div className="flex items-center space-x-1 md:space-x-2 flex-shrink-0">
+            <button
+              onClick={resetZoom}
+              className="p-1 md:p-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded-md transition-colors"
+              title="Reset zoom"
+            >
+              <RotateCcw className="w-3 h-3 md:w-4 md:h-4" />
+            </button>
+            
+            <button
+              onClick={handleZoomOut}
+              className="p-1 md:p-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded-md transition-colors"
+              title="Zoom out"
+            >
+              <ZoomOut className="w-3 h-3 md:w-4 md:h-4" />
+            </button>
+            
+            <form onSubmit={handleZoomInputSubmit} className="flex items-center">
+              <input
+                type="text"
+                value={zoomInput}
+                onChange={handleZoomInputChange}
+                onBlur={handleZoomInputBlur}
+                className="w-8 sm:w-12 md:w-16 text-xs md:text-sm text-center bg-gray-800 text-white px-1 md:px-2 py-1 rounded border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                title="Enter zoom percentage (25-500%)"
+              />
+              <span className="text-xs md:text-sm text-gray-300 ml-1">%</span>
+            </form>
+            
+            <button
+              onClick={handleZoomIn}
+              className="p-1 md:p-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded-md transition-colors"
+              title="Zoom in"
+            >
+              <ZoomIn className="w-3 h-3 md:w-4 md:h-4" />
+            </button>
 
-          {/* Content */}
-          <div className="flex-1 overflow-hidden bg-gray-100 dark:bg-dark-bg flex flex-col items-center justify-center p-2 md:p-4 transition-colors duration-200 relative">
-            {doc.file_type === 'pdf' && doc.file_url ? (
-              <>
-                <div 
-                  className="bg-white shadow-lg rounded-lg overflow-hidden flex-1 flex items-center justify-center w-full"
-                  onWheel={handleScroll}
-                >
+            <button
+              onClick={toggleFullscreen}
+              className="p-1 md:p-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded-md transition-colors"
+              title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+            >
+              <Expand className="w-3 h-3 md:w-4 md:h-4" />
+            </button>
+
+            <button
+              onClick={() => setShowShareModal(true)}
+              className="p-1 md:p-2 text-blue-400 hover:text-blue-300 hover:bg-blue-900/20 rounded-md transition-colors"
+              title="Share document"
+            >
+              <Share2 className="w-3 h-3 md:w-4 md:h-4" />
+            </button>
+            
+            {doc.file_url && (
+              <button
+                onClick={handleDirectDownload}
+                disabled={downloading}
+                className="flex items-center space-x-1 px-2 md:px-3 py-1 md:py-2 text-xs md:text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Download PDF directly to your device"
+              >
+                {downloading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-3 w-3 md:h-4 md:w-4 border-b-2 border-white"></div>
+                    <span className="hidden sm:inline">Downloading...</span>
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-3 h-3 md:w-4 md:h-4" />
+                    <span className="hidden sm:inline">Download</span>
+                  </>
+                )}
+              </button>
+            )}
+            
+            <button
+              onClick={onClose}
+              className="p-1 md:p-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded-md transition-colors ml-1 md:ml-2"
+            >
+              <X className="w-4 h-4 md:w-5 md:h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-hidden bg-gray-900 flex flex-col items-center justify-center relative">
+          {doc.file_type === 'pdf' && doc.file_url ? (
+            <>
+              <div 
+                className="flex-1 flex items-center justify-center w-full h-full overflow-auto"
+                onWheel={handleScroll}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+                style={{ 
+                  scrollBehavior: 'smooth',
+                  WebkitOverflowScrolling: 'touch'
+                }}
+              >
+                <div className="flex items-center justify-center p-2 md:p-4">
                   <PDFDocument
                     file={doc.file_url}
                     onLoadSuccess={onDocumentLoadSuccess}
                     loading={
                       <div className="flex items-center justify-center p-4 md:p-8">
-                        <div className="animate-spin rounded-full h-6 w-6 md:h-8 md:w-8 border-b-2 border-blue-600 dark:border-accent-primary"></div>
-                        <span className="ml-2 text-gray-600 dark:text-gray-300 text-sm md:text-base">Loading PDF...</span>
+                        <div className="animate-spin rounded-full h-6 w-6 md:h-8 md:w-8 border-b-2 border-blue-400"></div>
+                        <span className="ml-2 text-white text-sm md:text-base">Loading PDF...</span>
                       </div>
                     }
                     error={
-                      <div className="flex items-center justify-center p-4 md:p-8 text-red-600 dark:text-accent-warning">
+                      <div className="flex items-center justify-center p-4 md:p-8 text-red-400">
                         <span className="text-sm md:text-base">Failed to load PDF. Please try downloading the file.</span>
                       </div>
                     }
@@ -354,65 +443,68 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
                       scale={scale}
                       renderTextLayer={true}
                       renderAnnotationLayer={true}
-                      width={Math.min(viewerDimensions.width, window.innerWidth - 32)}
+                      width={getOptimalPageWidth()}
+                      className="shadow-2xl"
                     />
                   </PDFDocument>
                 </div>
-
-                {/* Page Navigation - Bottom Center */}
-                {numPages > 0 && (
-                  <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center space-x-2 bg-black bg-opacity-75 text-white px-3 py-2 rounded-lg">
-                    <button
-                      onClick={goToPrevPage}
-                      disabled={pageNumber <= 1}
-                      className="p-1 hover:bg-white hover:bg-opacity-20 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      title="Previous page"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </button>
-                    
-                    <form onSubmit={handlePageInputSubmit} className="flex items-center">
-                      <input
-                        type="text"
-                        value={pageInput}
-                        onChange={handlePageInputChange}
-                        onBlur={handlePageInputBlur}
-                        className="w-8 sm:w-12 text-xs sm:text-sm text-center bg-white bg-opacity-20 text-white px-1 py-1 rounded border-0 focus:ring-2 focus:ring-white focus:ring-opacity-50"
-                        title="Enter page number"
-                      />
-                      <span className="text-xs sm:text-sm mx-1">/</span>
-                      <span className="text-xs sm:text-sm">{numPages}</span>
-                    </form>
-                    
-                    <button
-                      onClick={goToNextPage}
-                      disabled={pageNumber >= numPages}
-                      className="p-1 hover:bg-white hover:bg-opacity-20 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      title="Next page"
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="bg-white dark:bg-dark-card rounded-lg p-4 md:p-6 max-w-4xl w-full max-h-full overflow-auto shadow-lg transition-colors duration-200">
-                <h4 className="text-base md:text-lg font-medium text-gray-900 dark:text-dark-text mb-4 border-b border-gray-200 dark:border-gray-600 pb-2">Extracted Text Content</h4>
-                <div 
-                  className="prose prose-sm max-w-none text-gray-700 dark:text-gray-300 leading-relaxed"
-                  style={{ fontSize: `${scale * 0.875}rem` }}
-                >
-                  {doc.content ? (
-                    <pre className="whitespace-pre-wrap font-sans bg-gray-50 dark:bg-dark-search p-3 md:p-4 rounded border border-gray-200 dark:border-gray-600 overflow-auto text-sm md:text-base transition-colors duration-200">
-                      {doc.content}
-                    </pre>
-                  ) : (
-                    <p className="text-gray-500 dark:text-gray-400 italic text-center py-8">No text content available</p>
-                  )}
-                </div>
               </div>
-            )}
-          </div>
+
+              {/* Page Navigation - Bottom Center */}
+              {numPages > 0 && (
+                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center space-x-2 bg-black bg-opacity-75 text-white px-3 py-2 rounded-lg">
+                  <button
+                    onClick={goToPrevPage}
+                    disabled={pageNumber <= 1}
+                    className="p-1 hover:bg-white hover:bg-opacity-20 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Previous page"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  
+                  <form onSubmit={handlePageInputSubmit} className="flex items-center">
+                    <input
+                      type="number"
+                      min="1"
+                      max={numPages}
+                      value={pageInput}
+                      onChange={handlePageInputChange}
+                      onBlur={handlePageInputBlur}
+                      className="w-12 sm:w-16 text-xs sm:text-sm text-center bg-white bg-opacity-20 text-white px-1 py-1 rounded border-0 focus:ring-2 focus:ring-white focus:ring-opacity-50"
+                      title="Enter page number"
+                    />
+                    <span className="text-xs sm:text-sm mx-1">/</span>
+                    <span className="text-xs sm:text-sm">{numPages}</span>
+                  </form>
+                  
+                  <button
+                    onClick={goToNextPage}
+                    disabled={pageNumber >= numPages}
+                    className="p-1 hover:bg-white hover:bg-opacity-20 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Next page"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="bg-gray-800 rounded-lg p-4 md:p-6 max-w-4xl w-full max-h-full overflow-auto shadow-lg m-4">
+              <h4 className="text-base md:text-lg font-medium text-white mb-4 border-b border-gray-600 pb-2">Extracted Text Content</h4>
+              <div 
+                className="prose prose-sm max-w-none text-gray-300 leading-relaxed"
+                style={{ fontSize: `${scale * 0.875}rem` }}
+              >
+                {doc.content ? (
+                  <pre className="whitespace-pre-wrap font-sans bg-gray-900 p-3 md:p-4 rounded border border-gray-600 overflow-auto text-sm md:text-base">
+                    {doc.content}
+                  </pre>
+                ) : (
+                  <p className="text-gray-400 italic text-center py-8">No text content available</p>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
