@@ -14,6 +14,31 @@ export function Layout({ children, currentPage = 'search', onPageChange }: Layou
   const { user, signOut } = useAuth()
   const [showProfile, setShowProfile] = React.useState(false)
   const [showDropdown, setShowDropdown] = React.useState(false)
+  const [userProfile, setUserProfile] = React.useState<any>(null)
+
+  // Fetch user profile to get username
+  React.useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (user?.id) {
+        try {
+          const { supabase } = await import('../lib/supabase')
+          const { data, error } = await supabase
+            .from('user_profiles')
+            .select('username, display_name')
+            .eq('user_id', user.id)
+            .single()
+
+          if (!error && data) {
+            setUserProfile(data)
+          }
+        } catch (error) {
+          console.error('Error fetching user profile:', error)
+        }
+      }
+    }
+
+    fetchUserProfile()
+  }, [user?.id])
 
   const handleSignOut = async () => {
     try {
@@ -28,6 +53,8 @@ export function Layout({ children, currentPage = 'search', onPageChange }: Layou
     { id: 'upload', label: 'Add Doc', icon: Plus },
     { id: 'documents', label: 'My Documents', icon: FileText },
   ]
+
+  const displayName = userProfile?.display_name || userProfile?.username || user?.email || 'User'
 
   return (
     <>
@@ -72,7 +99,7 @@ export function Layout({ children, currentPage = 'search', onPageChange }: Layou
                     className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-dark-text hover:bg-gray-50 dark:hover:bg-dark-search rounded-md px-3 py-2 transition-colors"
                   >
                     <User className="w-4 h-4" />
-                    <span className="max-w-32 truncate">{user?.email}</span>
+                    <span className="max-w-32 truncate">{displayName}</span>
                     <ChevronDown className={`w-4 h-4 transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
                   </button>
 
@@ -133,7 +160,7 @@ export function Layout({ children, currentPage = 'search', onPageChange }: Layou
                   {showDropdown && (
                     <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-dark-card rounded-md shadow-lg border border-gray-200 dark:border-gray-600 py-1 z-50">
                       <div className="px-4 py-2 text-xs text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-600 truncate">
-                        {user?.email}
+                        {displayName}
                       </div>
                       <button
                         onClick={() => {
