@@ -18,7 +18,7 @@ interface DocumentViewerProps {
   onClose: () => void
 }
 
-function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
+export function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
   const [numPages, setNumPages] = useState<number>(0)
   const [pageNumber, setPageNumber] = useState<number>(1)
   const [pageInput, setPageInput] = useState<string>('1')

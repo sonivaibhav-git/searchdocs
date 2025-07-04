@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { ProfilePage } from './ProfilePage'
 import { ImageViewer } from './ImageViewer'
 import { ShareModal } from './ShareModal'
-import { DocumentViewer } from './SearchPage'
+import { DocumentViewer } from './DocumentsPage'
 
 export function FavoritesPage() {
   const [favorites, setFavorites] = useState<DocumentWithProfile[]>([])
