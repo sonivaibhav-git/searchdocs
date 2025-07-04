@@ -8,6 +8,7 @@ import { Layout } from './components/Layout'
 import { SearchPage } from './components/SearchPage'
 import { UploadPage } from './components/UploadPage'
 import { DocumentsPage } from './components/DocumentsPage'
+import { FavoritesPage } from './components/FavoritesPage'
 import { DocumentViewerPage } from './components/DocumentViewerPage'
 
 function AppContent() {
@@ -34,6 +35,8 @@ function AppContent() {
         return <UploadPage />
       case 'documents':
         return <DocumentsPage />
+      case 'favorites':
+        return <FavoritesPage />
       default:
         return <SearchPage />
     }

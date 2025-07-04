@@ -1,6 +1,6 @@
 import React from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import { Search, Plus, LogOut, User, FileText, ChevronDown, Globe } from 'lucide-react'
+import { Search, Plus, LogOut, User, FileText, ChevronDown, Globe, Heart } from 'lucide-react'
 import { ProfilePage } from './ProfilePage'
 import { ThemeToggle } from './ThemeToggle'
 
@@ -52,9 +52,10 @@ export function Layout({ children, currentPage = 'search', onPageChange }: Layou
     { id: 'search', label: 'Search', icon: Search },
     { id: 'upload', label: 'Add Doc', icon: Plus },
     { id: 'documents', label: 'My Documents', icon: FileText },
+    { id: 'favorites', label: 'Favorites', icon: Heart },
   ]
 
-  const displayName = userProfile?.display_name || userProfile?.username || user?.email || 'User'
+  const displayName = userProfile?.username || user?.email || 'User'
 
   return (
     <>
@@ -209,7 +210,7 @@ export function Layout({ children, currentPage = 'search', onPageChange }: Layou
           data-bottom-nav
           className="fixed bottom-0 left-0 right-0 bg-white dark:bg-dark-card border-t border-gray-200 dark:border-gray-700 md:hidden z-50 safe-area-inset-bottom transition-colors duration-200"
         >
-          <div className="grid grid-cols-3 h-16">
+          <div className="grid grid-cols-4 h-16">
             {navItems.map((item) => {
               const Icon = item.icon
               return (

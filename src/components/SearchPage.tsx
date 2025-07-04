@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Search, FileText, Image, Calendar, Eye, ZoomIn, ZoomOut, X, Tag, Globe, Lock, User, AlertCircle, Expand, RotateCcw, Download, Share2, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Search, FileText, Image, Calendar, Eye, ZoomIn, ZoomOut, X, Tag, Globe, Lock, User, AlertCircle, Expand, RotateCcw, Download, Share2, ChevronLeft, ChevronRight, ChevronDown, BookOpen, Info, Heart, HeartOff } from 'lucide-react'
 import { supabase, DocumentWithProfile } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { Document as PDFDocument, Page, pdfjs } from 'react-pdf'
@@ -17,6 +17,100 @@ interface DocumentViewerProps {
   onClose: () => void
 }
 
+interface DocumentDetailsModalProps {
+  document: DocumentWithProfile
+  onClose: () => void
+}
+
+function DocumentDetailsModal({ document: doc, onClose }: DocumentDetailsModalProps) {
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
+      <div className="bg-white dark:bg-dark-card rounded-lg shadow-2xl w-full max-w-md transition-colors duration-200">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-600">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text">Document Details</h3>
+          <button
+            onClick={onClose}
+            className="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        
+        <div className="p-4 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title</label>
+            <p className="text-sm text-gray-900 dark:text-dark-text break-words">{doc.title}</p>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">File Type</label>
+            <p className="text-sm text-gray-900 dark:text-dark-text capitalize">{doc.file_type}</p>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">File Size</label>
+            <p className="text-sm text-gray-900 dark:text-dark-text">{formatFileSize(doc.file_size)}</p>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Access</label>
+            <div className="flex items-center space-x-2">
+              {doc.is_public ? (
+                <>
+                  <Globe className="w-4 h-4 text-green-600 dark:text-accent-success" />
+                  <span className="text-sm text-gray-900 dark:text-dark-text">Public</span>
+                </>
+              ) : (
+                <>
+                  <Lock className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                  <span className="text-sm text-gray-900 dark:text-dark-text">Private</span>
+                </>
+              )}
+            </div>
+          </div>
+          
+          {doc.user_profiles && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Owner</label>
+              <p className="text-sm text-gray-900 dark:text-dark-text">@{doc.user_profiles.username}</p>
+            </div>
+          )}
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Upload Date</label>
+            <p className="text-sm text-gray-900 dark:text-dark-text">{new Date(doc.created_at).toLocaleDateString()}</p>
+          </div>
+          
+          {doc.tags && doc.tags.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tags</label>
+              <div className="flex flex-wrap gap-1">
+                {doc.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center px-2 py-1 bg-blue-100 dark:bg-accent-primary/20 text-blue-800 dark:text-accent-primary rounded-full text-xs"
+                  >
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+        
+        <div className="flex justify-end p-4 border-t border-gray-200 dark:border-gray-600">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 bg-blue-600 dark:bg-accent-primary text-white rounded-md hover:bg-blue-700 dark:hover:bg-accent-primary/90 transition-colors"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
   const [numPages, setNumPages] = useState<number>(0)
   const [pageNumber, setPageNumber] = useState<number>(1)
@@ -26,31 +120,32 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [downloading, setDownloading] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
+  const [showDetailsModal, setShowDetailsModal] = useState(false)
+  const [showDropdown, setShowDropdown] = useState(false)
+  const [twoPageView, setTwoPageView] = useState(false)
+  const [isFavorite, setIsFavorite] = useState(false)
   const [containerDimensions, setContainerDimensions] = useState({ width: 0, height: 0 })
   const [isMobile, setIsMobile] = useState(false)
+  const { user } = useAuth()
 
   // Prevent background scrolling when viewer is open
   useEffect(() => {
-    // Disable scrolling on body
     document.body.style.overflow = 'hidden'
     document.body.style.position = 'fixed'
     document.body.style.width = '100%'
     document.body.style.height = '100%'
     
-    // Hide bottom navbar on mobile
     const bottomNav = document.querySelector('[data-bottom-nav]')
     if (bottomNav) {
       (bottomNav as HTMLElement).style.display = 'none'
     }
 
     return () => {
-      // Re-enable scrolling when component unmounts
       document.body.style.overflow = ''
       document.body.style.position = ''
       document.body.style.width = ''
       document.body.style.height = ''
       
-      // Show bottom navbar again
       if (bottomNav) {
         (bottomNav as HTMLElement).style.display = ''
       }
@@ -66,9 +161,8 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
     const updateDimensions = () => {
       checkMobile()
       
-      // Calculate container dimensions for full screen
-      const headerHeight = isMobile ? 80 : 100 // Top navbar height
-      const pageNavHeight = 60 // Bottom page navigation height
+      const headerHeight = isMobile ? 80 : 100
+      const pageNavHeight = 60
       
       const availableWidth = window.innerWidth
       const availableHeight = window.innerHeight - headerHeight - pageNavHeight
@@ -89,9 +183,30 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
     }
   }, [isMobile])
 
+  // Check if document is in favorites
+  useEffect(() => {
+    const checkFavoriteStatus = async () => {
+      if (user?.id) {
+        try {
+          const { data, error } = await supabase
+            .from('favorites')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('document_id', doc.id)
+            .single()
+          
+          setIsFavorite(!!data && !error)
+        } catch (error) {
+          console.error('Error checking favorite status:', error)
+        }
+      }
+    }
+    
+    checkFavoriteStatus()
+  }, [user?.id, doc.id])
+
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
     setNumPages(numPages)
-    // Auto-fit document to container height by default
     const optimalScale = calculateContainerFitScale()
     setScale(optimalScale)
     setZoomInput(Math.round(optimalScale * 100).toString())
@@ -102,20 +217,11 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
       return isMobile ? 0.8 : 1.0
     }
 
-    // Standard PDF page ratio is approximately 8.5:11 (0.77)
-    const pageRatio = 0.77
-    const containerRatio = containerDimensions.width / containerDimensions.height
+    // Calculate scale to fit document height to container
+    const heightBasedScale = containerDimensions.height / 1100 // Standard PDF height
+    const widthBasedScale = containerDimensions.width / (twoPageView ? 1700 : 850) // Adjust for two-page view
     
-    let optimalScale: number
-    
-    // Always prioritize fitting to height for better reading experience
-    const heightBasedScale = containerDimensions.height / 1100 // Assuming standard PDF height
-    const widthBasedScale = containerDimensions.width / 850   // Assuming standard PDF width
-    
-    // Use the smaller scale to ensure document fits completely
-    optimalScale = Math.min(heightBasedScale, widthBasedScale)
-    
-    // Ensure scale is within reasonable bounds
+    const optimalScale = Math.min(heightBasedScale, widthBasedScale)
     return Math.max(0.3, Math.min(optimalScale, isMobile ? 2.0 : 3.0))
   }
 
@@ -138,8 +244,7 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
   }
 
   const handleZoomInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
-    setZoomInput(value)
+    setZoomInput(e.target.value)
   }
 
   const handleZoomInputSubmit = (e: React.FormEvent) => {
@@ -196,6 +301,49 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
     setIsFullscreen(!isFullscreen)
   }
 
+  const toggleFavorite = async () => {
+    if (!user?.id) return
+    
+    try {
+      if (isFavorite) {
+        // Remove from favorites
+        const { error } = await supabase
+          .from('favorites')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('document_id', doc.id)
+        
+        if (!error) {
+          setIsFavorite(false)
+        }
+      } else {
+        // Add to favorites
+        const { error } = await supabase
+          .from('favorites')
+          .insert({
+            user_id: user.id,
+            document_id: doc.id
+          })
+        
+        if (!error) {
+          setIsFavorite(true)
+        }
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error)
+    }
+  }
+
+  const toggleTwoPageView = () => {
+    setTwoPageView(!twoPageView)
+    // Recalculate scale for new view mode
+    setTimeout(() => {
+      const optimalScale = calculateContainerFitScale()
+      setScale(optimalScale)
+      setZoomInput(Math.round(optimalScale * 100).toString())
+    }, 100)
+  }
+
   useEffect(() => {
     const handleFullscreenChange = () => {
       const isCurrentlyFullscreen = !!(
@@ -220,13 +368,13 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
   }, [])
 
   const goToPrevPage = () => {
-    const newPage = Math.max(pageNumber - 1, 1)
+    const newPage = Math.max(pageNumber - (twoPageView ? 2 : 1), 1)
     setPageNumber(newPage)
     setPageInput(newPage.toString())
   }
 
   const goToNextPage = () => {
-    const newPage = Math.min(pageNumber + 1, numPages)
+    const newPage = Math.min(pageNumber + (twoPageView ? 2 : 1), numPages)
     setPageNumber(newPage)
     setPageInput(newPage.toString())
   }
@@ -257,25 +405,26 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
     }
   }
 
-  // Handle scroll for page navigation (both desktop and mobile)
   const handleScroll = (e: React.WheelEvent | React.TouchEvent) => {
-    e.preventDefault() // Prevent background scrolling
+    e.preventDefault()
     
     if ('deltaY' in e) {
-      // Mouse wheel event
       if (e.deltaY > 0 && pageNumber < numPages) {
-        const newPage = pageNumber + 1
-        setPageNumber(newPage)
-        setPageInput(newPage.toString())
+        const newPage = pageNumber + (twoPageView ? 2 : 1)
+        if (newPage <= numPages) {
+          setPageNumber(newPage)
+          setPageInput(newPage.toString())
+        }
       } else if (e.deltaY < 0 && pageNumber > 1) {
-        const newPage = pageNumber - 1
-        setPageNumber(newPage)
-        setPageInput(newPage.toString())
+        const newPage = pageNumber - (twoPageView ? 2 : 1)
+        if (newPage >= 1) {
+          setPageNumber(newPage)
+          setPageInput(newPage.toString())
+        }
       }
     }
   }
 
-  // Touch handling for mobile
   const [touchStart, setTouchStart] = useState<number | null>(null)
   const [touchEnd, setTouchEnd] = useState<number | null>(null)
 
@@ -296,21 +445,20 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
     const isDownSwipe = distance < -50
 
     if (isUpSwipe && pageNumber < numPages) {
-      const newPage = pageNumber + 1
-      setPageNumber(newPage)
-      setPageInput(newPage.toString())
+      const newPage = pageNumber + (twoPageView ? 2 : 1)
+      if (newPage <= numPages) {
+        setPageNumber(newPage)
+        setPageInput(newPage.toString())
+      }
     }
     
     if (isDownSwipe && pageNumber > 1) {
-      const newPage = pageNumber - 1
-      setPageNumber(newPage)
-      setPageInput(newPage.toString())
+      const newPage = pageNumber - (twoPageView ? 2 : 1)
+      if (newPage >= 1) {
+        setPageNumber(newPage)
+        setPageInput(newPage.toString())
+      }
     }
-  }
-
-  const getDocumentWidth = () => {
-    // Calculate width based on container and scale, prioritizing height fit
-    return containerDimensions.width * 0.95 // Use most of container width
   }
 
   return (
@@ -339,11 +487,69 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
                   )}
                   <span>{doc.is_public ? 'Public' : 'Private'}</span>
                 </div>
+                {doc.user_profiles && (
+                  <>
+                    <span className="hidden lg:inline">•</span>
+                    <span className="hidden lg:inline">@{doc.user_profiles.username}</span>
+                  </>
+                )}
               </div>
             </div>
           </div>
           
           <div className="flex items-center space-x-1 md:space-x-2 flex-shrink-0">
+            {/* Dropdown Menu */}
+            <div className="relative">
+              <button
+                onClick={() => setShowDropdown(!showDropdown)}
+                className="p-1 md:p-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded-md transition-colors"
+                title="More options"
+              >
+                <ChevronDown className="w-3 h-3 md:w-4 md:h-4" />
+              </button>
+
+              {showDropdown && (
+                <div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-md shadow-lg border border-gray-600 py-1 z-50">
+                  <button
+                    onClick={() => {
+                      toggleTwoPageView()
+                      setShowDropdown(false)
+                    }}
+                    className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 transition-colors"
+                  >
+                    <BookOpen className="w-4 h-4" />
+                    <span>{twoPageView ? 'Single Page View' : 'Two Page View'}</span>
+                  </button>
+                  
+                  <button
+                    onClick={() => {
+                      setShowDetailsModal(true)
+                      setShowDropdown(false)
+                    }}
+                    className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 transition-colors"
+                  >
+                    <Info className="w-4 h-4" />
+                    <span>Document Details</span>
+                  </button>
+                  
+                  <button
+                    onClick={() => {
+                      toggleFavorite()
+                      setShowDropdown(false)
+                    }}
+                    className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 transition-colors"
+                  >
+                    {isFavorite ? (
+                      <HeartOff className="w-4 h-4 text-red-400" />
+                    ) : (
+                      <Heart className="w-4 h-4" />
+                    )}
+                    <span>{isFavorite ? 'Remove from Favorites' : 'Add to Favorites'}</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
             <button
               onClick={resetZoom}
               className="p-1 md:p-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded-md transition-colors"
@@ -465,14 +671,26 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
                       </div>
                     }
                   >
-                    <Page
-                      pageNumber={pageNumber}
-                      scale={scale}
-                      renderTextLayer={true}
-                      renderAnnotationLayer={true}
-                      height={containerDimensions.height * 0.9} // Use 90% of container height
-                      className="shadow-2xl bg-white rounded"
-                    />
+                    <div className={`flex ${twoPageView ? 'space-x-4' : ''}`}>
+                      <Page
+                        pageNumber={pageNumber}
+                        scale={scale}
+                        renderTextLayer={true}
+                        renderAnnotationLayer={true}
+                        height={containerDimensions.height * 0.9}
+                        className="shadow-2xl bg-white rounded"
+                      />
+                      {twoPageView && pageNumber < numPages && (
+                        <Page
+                          pageNumber={pageNumber + 1}
+                          scale={scale}
+                          renderTextLayer={true}
+                          renderAnnotationLayer={true}
+                          height={containerDimensions.height * 0.9}
+                          className="shadow-2xl bg-white rounded"
+                        />
+                      )}
+                    </div>
                   </PDFDocument>
                 </div>
               </div>
@@ -512,6 +730,10 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
                   >
                     <ChevronRight className="w-4 h-4" />
                   </button>
+                  
+                  {twoPageView && (
+                    <span className="text-xs text-gray-300 ml-2">Two Page</span>
+                  )}
                 </div>
               )}
             </>
@@ -541,10 +763,25 @@ function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) {
         </div>
       </div>
 
+      {/* Close dropdown when clicking outside */}
+      {showDropdown && (
+        <div 
+          className="fixed inset-0 z-40" 
+          onClick={() => setShowDropdown(false)}
+        ></div>
+      )}
+
       {showShareModal && (
         <ShareModal
           document={doc}
           onClose={() => setShowShareModal(false)}
+        />
+      )}
+
+      {showDetailsModal && (
+        <DocumentDetailsModal
+          document={doc}
+          onClose={() => setShowDetailsModal(false)}
         />
       )}
     </>
@@ -571,7 +808,6 @@ const getTagColor = (tag: string, index: number) => {
     'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
   ]
   
-  // Use tag name to generate consistent color
   const colorIndex = tag.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length
   return colors[colorIndex]
 }
@@ -664,14 +900,12 @@ export function SearchPage() {
   const handleSearch = async () => {
     let filteredDocs = allDocuments
 
-    // Apply privacy filter
     if (selectedPrivacy === 'public') {
       filteredDocs = filteredDocs.filter(doc => doc.is_public)
     } else if (selectedPrivacy === 'private') {
       filteredDocs = filteredDocs.filter(doc => !doc.is_public && doc.user_id === user?.id)
     }
 
-    // Apply tag filter
     if (selectedTags.length > 0) {
       filteredDocs = filteredDocs.filter(doc => 
         doc.tags && doc.tags.some(tag => selectedTags.includes(tag))
@@ -713,14 +947,12 @@ export function SearchPage() {
 
       let searchResults = data || []
 
-      // Apply privacy filter to search results
       if (selectedPrivacy === 'public') {
         searchResults = searchResults.filter(doc => doc.is_public)
       } else if (selectedPrivacy === 'private') {
         searchResults = searchResults.filter(doc => !doc.is_public && doc.user_id === user?.id)
       }
 
-      // Apply tag filter to search results
       if (selectedTags.length > 0) {
         searchResults = searchResults.filter(doc => 
           doc.tags && doc.tags.some(tag => selectedTags.includes(tag))
@@ -758,14 +990,12 @@ export function SearchPage() {
     } else {
       let filteredDocs = allDocuments
       
-      // Apply privacy filter
       if (selectedPrivacy === 'public') {
         filteredDocs = filteredDocs.filter(doc => doc.is_public)
       } else if (selectedPrivacy === 'private') {
         filteredDocs = filteredDocs.filter(doc => !doc.is_public && doc.user_id === user?.id)
       }
       
-      // Apply tag filter
       if (selectedTags.length > 0) {
         filteredDocs = filteredDocs.filter(doc => 
           doc.tags && doc.tags.some(tag => selectedTags.includes(tag))
