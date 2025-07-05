@@ -25,27 +25,34 @@ interface DocumentDetailsModalProps {
 
 function DocumentDetailsModal({ document: doc, onClose }: DocumentDetailsModalProps) {
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-2 sm:p-4">
       <div className="bg-white dark:bg-dark-card rounded-lg shadow-2xl w-full max-w-md transition-colors duration-200">
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-600">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text">Document Details</h3>
+        <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 dark:border-gray-600">
+          <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+            <Info className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 dark:text-accent-primary flex-shrink-0" />
+            <div className="min-w-0 flex-1">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-dark-text">Document Details</h2>
+            </div>
+          </div>
+          
           <button
             onClick={onClose}
-            className="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
+            className="p-1.5 sm:p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-md transition-colors flex-shrink-0"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
         </div>
 
-        <div className="p-4 space-y-4">
+        <div className="p-4 sm:p-6 space-y-4">
           <div>
-            <h4 className="font-medium text-gray-900 dark:text-dark-text mb-2 truncate">{doc.title}</h4>
+            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">File Name</h3>
+            <p className="text-gray-900 dark:text-dark-text break-words">{doc.title}</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <span className="text-gray-500 dark:text-gray-400">File Type:</span>
-              <div className="flex items-center space-x-1 mt-1">
+              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">File Type</h3>
+              <div className="flex items-center space-x-2">
                 {doc.file_type === 'pdf' ? (
                   <FileText className="w-4 h-4 text-red-500" />
                 ) : (
@@ -56,42 +63,50 @@ function DocumentDetailsModal({ document: doc, onClose }: DocumentDetailsModalPr
             </div>
 
             <div>
-              <span className="text-gray-500 dark:text-gray-400">File Size:</span>
-              <p className="text-gray-900 dark:text-dark-text mt-1">{formatFileSize(doc.file_size)}</p>
+              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">File Size</h3>
+              <p className="text-gray-900 dark:text-dark-text">{formatFileSize(doc.file_size)}</p>
             </div>
+          </div>
 
-            <div>
-              <span className="text-gray-500 dark:text-gray-400">Access:</span>
-              <div className="flex items-center space-x-1 mt-1">
-                {doc.is_public ? (
+          <div>
+            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Access Level</h3>
+            <div className="flex items-center space-x-2">
+              {doc.is_public ? (
+                <>
                   <Globe className="w-4 h-4 text-green-600 dark:text-accent-success" />
-                ) : (
+                  <span className="text-gray-900 dark:text-dark-text">Public</span>
+                </>
+              ) : (
+                <>
                   <Lock className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                )}
-                <span className="text-gray-900 dark:text-dark-text">{doc.is_public ? 'Public' : 'Private'}</span>
-              </div>
-            </div>
-
-            <div>
-              <span className="text-gray-500 dark:text-gray-400">Upload Date:</span>
-              <p className="text-gray-900 dark:text-dark-text mt-1">{new Date(doc.created_at).toLocaleDateString()}</p>
+                  <span className="text-gray-900 dark:text-dark-text">Private</span>
+                </>
+              )}
             </div>
           </div>
 
           {doc.user_profiles && (
             <div>
-              <span className="text-gray-500 dark:text-gray-400">Owner:</span>
-              <div className="flex items-center space-x-2 mt-1">
-                <User className="w-4 h-4 text-blue-600 dark:text-accent-primary" />
+              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Owner</h3>
+              <div className="flex items-center space-x-2">
+                <User className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                 <span className="text-gray-900 dark:text-dark-text">@{doc.user_profiles.username}</span>
               </div>
             </div>
           )}
 
+          <div>
+            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Upload Date</h3>
+            <div className="flex items-center space-x-2">
+              <Calendar className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+              <span className="text-gray-900 dark:text-dark-text">{new Date(doc.created_at).toLocaleDateString()}</span>
+            </div>
+          </div>
+
           {doc.tags && doc.tags.length > 0 && (
             <div>
-              <span className="text-gray-500 dark:text-gray-400">Tags:</span>
-              <div className="flex flex-wrap gap-1 mt-1">
+              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tags</h3>
+              <div className="flex flex-wrap gap-2">
                 {doc.tags.map((tag) => (
                   <span
                     key={tag}
@@ -106,10 +121,10 @@ function DocumentDetailsModal({ document: doc, onClose }: DocumentDetailsModalPr
           )}
         </div>
 
-        <div className="flex justify-end p-4 border-t border-gray-200 dark:border-gray-600">
+        <div className="flex items-center justify-end p-4 sm:p-6 border-t border-gray-200 dark:border-gray-600">
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-blue-600 dark:bg-accent-primary text-white rounded-md hover:bg-blue-700 dark:hover:bg-accent-primary/90 transition-colors"
+            className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-dark-text transition-colors"
           >
             Close
           </button>
@@ -128,12 +143,12 @@ export function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) 
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [downloading, setDownloading] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
-  const [showDropdown, setShowDropdown] = useState(false)
   const [showDetailsModal, setShowDetailsModal] = useState(false)
-  const [twoPageView, setTwoPageView] = useState(false)
+  const [showDropdown, setShowDropdown] = useState(false)
+  const [isTwoPageView, setIsTwoPageView] = useState(false)
   const [isFavorited, setIsFavorited] = useState(false)
-  const [pageWidth, setPageWidth] = useState<number>(0)
-  const [pageHeight, setPageHeight] = useState<number>(0)
+  const [containerDimensions, setContainerDimensions] = useState({ width: 0, height: 0 })
+  const [pageDimensions, setPageDimensions] = useState({ width: 0, height: 0 })
   const [isMobile, setIsMobile] = useState(false)
   const { user } = useAuth()
 
@@ -165,21 +180,37 @@ export function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) 
     }
   }, [])
 
-  // Check if mobile
+  // Check if mobile and update container dimensions
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth <= 768)
     }
     
-    checkMobile()
-    window.addEventListener('resize', checkMobile)
-    window.addEventListener('orientationchange', checkMobile)
+    const updateDimensions = () => {
+      checkMobile()
+      
+      // Calculate container dimensions for full screen
+      const headerHeight = isMobile ? 80 : 100 // Top navbar height
+      const pageNavHeight = 60 // Bottom page navigation height
+      
+      const availableWidth = window.innerWidth
+      const availableHeight = window.innerHeight - headerHeight - pageNavHeight
+      
+      setContainerDimensions({
+        width: availableWidth,
+        height: availableHeight
+      })
+    }
+
+    updateDimensions()
+    window.addEventListener('resize', updateDimensions)
+    window.addEventListener('orientationchange', updateDimensions)
 
     return () => {
-      window.removeEventListener('resize', checkMobile)
-      window.removeEventListener('orientationchange', checkMobile)
+      window.removeEventListener('resize', updateDimensions)
+      window.removeEventListener('orientationchange', updateDimensions)
     }
-  }, [])
+  }, [isMobile])
 
   // Check if document is favorited
   useEffect(() => {
@@ -194,9 +225,8 @@ export function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) 
           .eq('document_id', doc.id)
           .maybeSingle()
 
-        if (!error) {
-          setIsFavorited(!!data)
-        }
+        if (error) throw error
+        setIsFavorited(!!data)
       } catch (error) {
         console.error('Error checking favorite status:', error)
       }
@@ -205,32 +235,21 @@ export function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) 
     checkFavoriteStatus()
   }, [user?.id, doc.id])
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (showDropdown) {
-        setShowDropdown(false)
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [showDropdown])
-
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
     setNumPages(numPages)
   }
 
   const onPageLoadSuccess = (page: any) => {
-    const { width, height } = page
-    setPageWidth(width)
-    setPageHeight(height)
+    const { width, height } = page.getViewport({ scale: 1 })
+    setPageDimensions({ width, height })
     
-    // Set initial scale to fit document width exactly to container
-    const containerWidth = window.innerWidth - (isMobile ? 32 : 64) // Account for padding
-    const initialScale = containerWidth / width
-    setScale(initialScale)
-    setZoomInput(Math.round(initialScale * 100).toString())
+    // Calculate scale to fit the page exactly to container
+    const scaleX = containerDimensions.width / width
+    const scaleY = containerDimensions.height / height
+    const optimalScale = Math.min(scaleX, scaleY, 3.0) // Cap at 3x for readability
+    
+    setScale(optimalScale)
+    setZoomInput(Math.round(optimalScale * 100).toString())
   }
 
   const handleZoomIn = () => {
@@ -246,11 +265,12 @@ export function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) 
   }
 
   const resetZoom = () => {
-    if (pageWidth > 0) {
-      const containerWidth = window.innerWidth - (isMobile ? 32 : 64)
-      const fitScale = containerWidth / pageWidth
-      setScale(fitScale)
-      setZoomInput(Math.round(fitScale * 100).toString())
+    if (pageDimensions.width && pageDimensions.height && containerDimensions.width && containerDimensions.height) {
+      const scaleX = containerDimensions.width / pageDimensions.width
+      const scaleY = containerDimensions.height / pageDimensions.height
+      const optimalScale = Math.min(scaleX, scaleY, 3.0)
+      setScale(optimalScale)
+      setZoomInput(Math.round(optimalScale * 100).toString())
     } else {
       setScale(1.0)
       setZoomInput('100')
@@ -389,9 +409,8 @@ export function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) 
           .eq('user_id', user.id)
           .eq('document_id', doc.id)
 
-        if (!error) {
-          setIsFavorited(false)
-        }
+        if (error) throw error
+        setIsFavorited(false)
       } else {
         // Add to favorites
         const { error } = await supabase
@@ -401,9 +420,8 @@ export function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) 
             document_id: doc.id
           })
 
-        if (!error) {
-          setIsFavorited(true)
-        }
+        if (error) throw error
+        setIsFavorited(true)
       }
     } catch (error) {
       console.error('Error toggling favorite:', error)
@@ -461,25 +479,25 @@ export function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) 
     }
   }
 
-  // Calculate container dimensions based on document page size and scale
-  const getContainerDimensions = () => {
-    if (pageWidth === 0 || pageHeight === 0) {
+  // Calculate exact container size based on page dimensions
+  const getContainerStyle = () => {
+    if (pageDimensions.width && pageDimensions.height) {
+      const scaledWidth = pageDimensions.width * scale
+      const scaledHeight = pageDimensions.height * scale
+      
       return {
-        width: window.innerWidth - (isMobile ? 32 : 64),
-        height: window.innerHeight - (isMobile ? 160 : 200)
+        width: `${scaledWidth}px`,
+        height: `${scaledHeight}px`,
+        maxWidth: `${containerDimensions.width}px`,
+        maxHeight: `${containerDimensions.height}px`
       }
     }
-
-    const scaledWidth = pageWidth * scale
-    const scaledHeight = pageHeight * scale
     
     return {
-      width: scaledWidth,
-      height: scaledHeight
+      width: `${containerDimensions.width}px`,
+      height: `${containerDimensions.height}px`
     }
   }
-
-  const containerDimensions = getContainerDimensions()
 
   return (
     <>
@@ -570,13 +588,13 @@ export function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) 
                 <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-dark-card rounded-md shadow-lg border border-gray-200 dark:border-gray-600 py-1 z-50">
                   <button
                     onClick={() => {
-                      setTwoPageView(!twoPageView)
+                      setIsTwoPageView(!isTwoPageView)
                       setShowDropdown(false)
                     }}
                     className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-search transition-colors"
                   >
                     <BookOpen className="w-4 h-4" />
-                    <span>{twoPageView ? 'Single Page View' : 'Two Page View'}</span>
+                    <span>{isTwoPageView ? 'Single Page View' : 'Two Page View'}</span>
                   </button>
                   
                   <button
@@ -645,23 +663,16 @@ export function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) 
         </div>
 
         {/* Full Screen Content */}
-        <div className="flex-1 overflow-auto bg-gray-900 flex items-center justify-center relative">
+        <div className="flex-1 overflow-hidden bg-gray-900 flex items-center justify-center relative">
           {doc.file_type === 'pdf' && doc.file_url ? (
             <>
               <div 
-                className="flex items-center justify-center overflow-auto p-2 md:p-4"
+                className="flex items-center justify-center overflow-auto"
                 onWheel={handleScroll}
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
-                style={{ 
-                  scrollBehavior: 'smooth',
-                  WebkitOverflowScrolling: 'touch',
-                  width: `${containerDimensions.width + (isMobile ? 32 : 64)}px`,
-                  height: `${containerDimensions.height + (isMobile ? 32 : 64)}px`,
-                  maxWidth: '100vw',
-                  maxHeight: '100vh'
-                }}
+                style={getContainerStyle()}
               >
                 <div className="flex items-center justify-center">
                   <PDFDocument
@@ -679,7 +690,7 @@ export function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) 
                       </div>
                     }
                   >
-                    {twoPageView && pageNumber < numPages ? (
+                    {isTwoPageView && pageNumber < numPages ? (
                       <div className="flex space-x-4">
                         <Page
                           pageNumber={pageNumber}
@@ -768,6 +779,14 @@ export function DocumentViewer({ document: doc, onClose }: DocumentViewerProps) 
           )}
         </div>
       </div>
+
+      {/* Close dropdown when clicking outside */}
+      {showDropdown && (
+        <div 
+          className="fixed inset-0 z-40" 
+          onClick={() => setShowDropdown(false)}
+        ></div>
+      )}
 
       {showShareModal && (
         <ShareModal
