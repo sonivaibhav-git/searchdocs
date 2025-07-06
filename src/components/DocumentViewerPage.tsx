@@ -40,6 +40,7 @@ export function DocumentViewerPage() {
   const [showDocDetails, setShowDocDetails] = useState(false)
   const [isFavorited, setIsFavorited] = useState(false)
   const [pageDimensions, setPageDimensions] = useState({ width: 0, height: 0 })
+  const [headerHeight, setHeaderHeight] = useState(64) // Default header height
 
   useEffect(() => {
     if (documentId) {
@@ -49,6 +50,25 @@ export function DocumentViewerPage() {
       }
     }
   }, [documentId, user?.id])
+
+  // Calculate header height on mount and resize
+  useEffect(() => {
+    const calculateHeaderHeight = () => {
+      const header = document.querySelector('[data-document-header]')
+      const controls = document.querySelector('[data-document-controls]')
+      
+      let totalHeight = 0
+      if (header) totalHeight += header.getBoundingClientRect().height
+      if (controls) totalHeight += controls.getBoundingClientRect().height
+      
+      setHeaderHeight(totalHeight || 120) // Fallback to 120px
+    }
+
+    calculateHeaderHeight()
+    window.addEventListener('resize', calculateHeaderHeight)
+    
+    return () => window.removeEventListener('resize', calculateHeaderHeight)
+  }, [])
 
   const fetchDocument = async () => {
     try {
@@ -149,9 +169,9 @@ export function DocumentViewerPage() {
     const { width, height } = page.getViewport({ scale: 1 })
     setPageDimensions({ width, height })
     
-    // Calculate scale to fit screen dimensions
-    const screenWidth = window.innerWidth - 64 // Account for padding
-    const screenHeight = window.innerHeight - 200 // Account for header and controls
+    // Calculate scale to fit screen dimensions, accounting for header height
+    const screenWidth = window.innerWidth - 32 // Account for padding
+    const screenHeight = window.innerHeight - headerHeight - 32 // Account for header and padding
     
     const scaleX = screenWidth / width
     const scaleY = screenHeight / height
@@ -176,8 +196,8 @@ export function DocumentViewerPage() {
   const resetZoom = () => {
     // Reset to screen-fit zoom
     if (pageDimensions.width && pageDimensions.height) {
-      const screenWidth = window.innerWidth - 64
-      const screenHeight = window.innerHeight - 200
+      const screenWidth = window.innerWidth - 32
+      const screenHeight = window.innerHeight - headerHeight - 32
       
       const scaleX = screenWidth / pageDimensions.width
       const scaleY = screenHeight / pageDimensions.height
@@ -382,7 +402,10 @@ export function DocumentViewerPage() {
     <>
       <div className="min-h-screen bg-gray-50 dark:bg-dark-bg transition-colors duration-200">
         {/* Header */}
-        <div className="bg-white dark:bg-dark-card shadow-sm border-b border-gray-200 dark:border-gray-700 transition-colors duration-200">
+        <div 
+          data-document-header
+          className="bg-white dark:bg-dark-card shadow-sm border-b border-gray-200 dark:border-gray-700 transition-colors duration-200"
+        >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-16">
               <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
@@ -504,7 +527,10 @@ export function DocumentViewerPage() {
         </div>
 
         {/* Viewer Controls */}
-        <div className="bg-gray-100 dark:bg-dark-search border-b border-gray-200 dark:border-gray-600 px-4 py-2 transition-colors duration-200">
+        <div 
+          data-document-controls
+          className="bg-gray-100 dark:bg-dark-search border-b border-gray-200 dark:border-gray-600 px-4 py-2 transition-colors duration-200"
+        >
           <div className="max-w-7xl mx-auto flex items-center justify-center space-x-4">
             <button
               onClick={resetZoom}
@@ -552,15 +578,22 @@ export function DocumentViewerPage() {
           </div>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 bg-gray-100 dark:bg-dark-bg flex flex-col items-center justify-center p-4 transition-colors duration-200 relative min-h-[calc(100vh-120px)]">
+        {/* Content - Positioned from navbar height */}
+        <div 
+          className="bg-gray-100 dark:bg-dark-bg flex flex-col items-center transition-colors duration-200 relative"
+          style={{ 
+            minHeight: `calc(100vh - ${headerHeight}px)`,
+            paddingTop: '16px' // Small padding from controls
+          }}
+        >
           {document.file_type === 'pdf' && document.file_url ? (
             <>
               <div 
                 className="bg-white shadow-lg rounded-lg overflow-hidden flex items-center justify-center"
                 style={{
                   width: `${containerDimensions.width}px`,
-                  height: `${containerDimensions.height}px`
+                  height: `${containerDimensions.height}px`,
+                  marginTop: '0' // Start immediately after controls
                 }}
                 onWheel={handleScroll}
               >
