@@ -170,8 +170,8 @@ export function DocumentViewerPage() {
     setPageDimensions({ width, height })
     
     // Calculate scale to fit screen dimensions, accounting for header height
-    const screenWidth = window.innerWidth - 32 // Account for padding
-    const screenHeight = window.innerHeight - headerHeight - 32 // Account for header and padding
+    const screenWidth = window.innerWidth - 64 // Account for padding
+    const screenHeight = window.innerHeight - headerHeight - 64 // Account for header and padding
     
     const scaleX = screenWidth / width
     const scaleY = screenHeight / height
@@ -196,8 +196,8 @@ export function DocumentViewerPage() {
   const resetZoom = () => {
     // Reset to screen-fit zoom
     if (pageDimensions.width && pageDimensions.height) {
-      const screenWidth = window.innerWidth - 32
-      const screenHeight = window.innerHeight - headerHeight - 32
+      const screenWidth = window.innerWidth - 64
+      const screenHeight = window.innerHeight - headerHeight - 64
       
       const scaleX = screenWidth / pageDimensions.width
       const scaleY = screenHeight / pageDimensions.height
@@ -347,23 +347,6 @@ export function DocumentViewerPage() {
       setPageInput(newPage.toString())
     }
   }
-
-  const getContainerDimensions = () => {
-    if (!pageDimensions.width || !pageDimensions.height) {
-      return {
-        width: Math.min(window.innerWidth * 0.9, 1200),
-        height: Math.min(window.innerHeight * 0.7, 800)
-      }
-    }
-    
-    // Container dimensions should exactly match the scaled page dimensions
-    return {
-      width: pageDimensions.width * scale,
-      height: pageDimensions.height * scale
-    }
-  }
-
-  const containerDimensions = getContainerDimensions()
 
   if (loading) {
     return (
@@ -580,21 +563,17 @@ export function DocumentViewerPage() {
 
         {/* Content - Positioned from navbar height */}
         <div 
-          className="bg-gray-100 dark:bg-dark-bg flex flex-col items-center transition-colors duration-200 relative"
+          className="bg-gray-100 dark:bg-dark-bg flex flex-col items-center justify-center transition-colors duration-200 relative overflow-auto"
           style={{ 
             minHeight: `calc(100vh - ${headerHeight}px)`,
-            paddingTop: '16px' // Small padding from controls
+            paddingTop: '16px',
+            paddingBottom: '16px'
           }}
         >
           {document.file_type === 'pdf' && document.file_url ? (
             <>
               <div 
                 className="bg-white shadow-lg rounded-lg overflow-hidden flex items-center justify-center"
-                style={{
-                  width: `${containerDimensions.width}px`,
-                  height: `${containerDimensions.height}px`,
-                  marginTop: '0' // Start immediately after controls
-                }}
                 onWheel={handleScroll}
               >
                 <PDFDocument
@@ -618,8 +597,6 @@ export function DocumentViewerPage() {
                     renderTextLayer={true}
                     renderAnnotationLayer={true}
                     onLoadSuccess={onPageLoadSuccess}
-                    width={pageDimensions.width * scale}
-                    height={pageDimensions.height * scale}
                   />
                 </PDFDocument>
               </div>
