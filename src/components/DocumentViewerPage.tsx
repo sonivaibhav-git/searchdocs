@@ -40,7 +40,7 @@ export function DocumentViewerPage() {
   const [showDocDetails, setShowDocDetails] = useState(false)
   const [isFavorited, setIsFavorited] = useState(false)
   const [pageDimensions, setPageDimensions] = useState({ width: 0, height: 0 })
-  const [headerHeight, setHeaderHeight] = useState(64) // Default header height
+  const [headerHeight, setHeaderHeight] = useState(120) // Default header height
 
   useEffect(() => {
     if (documentId) {
@@ -169,13 +169,13 @@ export function DocumentViewerPage() {
     const { width, height } = page.getViewport({ scale: 1 })
     setPageDimensions({ width, height })
     
-    // Calculate scale to fit screen dimensions, accounting for header height
-    const screenWidth = window.innerWidth - 64 // Account for padding
-    const screenHeight = window.innerHeight - headerHeight - 64 // Account for header and padding
+    // Calculate scale to fit screen dimensions
+    const screenWidth = window.innerWidth - 32 // Account for minimal padding
+    const screenHeight = window.innerHeight - headerHeight - 32 // Account for header and minimal padding
     
     const scaleX = screenWidth / width
     const scaleY = screenHeight / height
-    const optimalScale = Math.min(scaleX, scaleY, 2.0) // Cap at 2x for readability
+    const optimalScale = Math.min(scaleX, scaleY) // Fit to screen
     
     setScale(optimalScale)
     setZoomInput(Math.round(optimalScale * 100).toString())
@@ -196,12 +196,12 @@ export function DocumentViewerPage() {
   const resetZoom = () => {
     // Reset to screen-fit zoom
     if (pageDimensions.width && pageDimensions.height) {
-      const screenWidth = window.innerWidth - 64
-      const screenHeight = window.innerHeight - headerHeight - 64
+      const screenWidth = window.innerWidth - 32
+      const screenHeight = window.innerHeight - headerHeight - 32
       
       const scaleX = screenWidth / pageDimensions.width
       const scaleY = screenHeight / pageDimensions.height
-      const optimalScale = Math.min(scaleX, scaleY, 2.0)
+      const optimalScale = Math.min(scaleX, scaleY)
       
       setScale(optimalScale)
       setZoomInput(Math.round(optimalScale * 100).toString())
@@ -561,19 +561,18 @@ export function DocumentViewerPage() {
           </div>
         </div>
 
-        {/* Content - Positioned from navbar height */}
+        {/* Content - Full screen width and height minus header */}
         <div 
-          className="bg-gray-100 dark:bg-dark-bg flex flex-col items-center justify-center transition-colors duration-200 relative overflow-auto"
+          className="bg-gray-100 dark:bg-dark-bg flex items-center justify-center transition-colors duration-200 relative overflow-auto"
           style={{ 
-            minHeight: `calc(100vh - ${headerHeight}px)`,
-            paddingTop: '16px',
-            paddingBottom: '16px'
+            height: `calc(100vh - ${headerHeight}px)`,
+            width: '100vw'
           }}
         >
           {document.file_type === 'pdf' && document.file_url ? (
             <>
               <div 
-                className="bg-white shadow-lg rounded-lg overflow-hidden flex items-center justify-center"
+                className="flex items-center justify-center w-full h-full"
                 onWheel={handleScroll}
               >
                 <PDFDocument
@@ -602,7 +601,7 @@ export function DocumentViewerPage() {
               </div>
 
               {/* Page Navigation - Bottom Center */}
-              {numPages > 0 && (
+              {numPages > 1 && (
                 <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center space-x-2 bg-black bg-opacity-75 text-white px-4 py-2 rounded-lg">
                   <button
                     onClick={goToPrevPage}
