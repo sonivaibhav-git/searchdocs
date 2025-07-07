@@ -163,37 +163,22 @@ export function DocumentViewerPage() {
     setNumPages(numPages)
   }
 
-  const onPageLoadSuccess = () => {
-    // Set initial scale to fit screen width
-    const screenWidth = window.innerWidth - 64 // Account for padding
-    const screenHeight = window.innerHeight - headerHeight - 64 // Account for header and padding
-    
-    // Start with a reasonable scale that fits most screens
-    const initialScale = Math.min(screenWidth / 800, screenHeight / 1000, 1.2)
-    setScale(initialScale)
-    setZoomInput(Math.round(initialScale * 100).toString())
-  }
 
   const handleZoomIn = () => {
-    const newScale = Math.min(scale * 1.25, 5.0) // Increase by 25%
+    const newScale = Math.min(scale + 0.2, 3.0) // Increase by 0.2 (20%)
     setScale(newScale)
     setZoomInput(Math.round(newScale * 100).toString())
   }
   
   const handleZoomOut = () => {
-    const newScale = Math.max(scale * 0.8, 0.25) // Decrease by 20%
+    const newScale = Math.max(scale - 0.2, 0.5) // Decrease by 0.2 (20%)
     setScale(newScale)
     setZoomInput(Math.round(newScale * 100).toString())
   }
 
   const resetZoom = () => {
-    // Reset to fit screen
-    const screenWidth = window.innerWidth - 64
-    const screenHeight = window.innerHeight - headerHeight - 64
-    const fitScale = Math.min(screenWidth / 800, screenHeight / 1000, 1.2)
-    
-    setScale(fitScale)
-    setZoomInput(Math.round(fitScale * 100).toString())
+    setScale(1.0)
+    setZoomInput('100')
   }
 
   const handleZoomInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -204,7 +189,7 @@ export function DocumentViewerPage() {
   const handleZoomInputSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     const numValue = parseInt(zoomInput)
-    if (!isNaN(numValue) && numValue >= 25 && numValue <= 500) {
+    if (!isNaN(numValue) && numValue >= 50 && numValue <= 300) {
       setScale(numValue / 100)
     } else {
       setZoomInput(Math.round(scale * 100).toString())
@@ -478,7 +463,7 @@ export function DocumentViewerPage() {
                 onChange={handleZoomInputChange}
                 onBlur={handleZoomInputBlur}
                 className="w-16 text-sm text-center bg-white dark:bg-dark-card text-gray-900 dark:text-dark-text px-2 py-1 rounded border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 dark:focus:ring-accent-primary focus:border-transparent"
-                title="Enter zoom percentage (25-500%)"
+                title="Enter zoom percentage (50-300%)"
               />
               <span className="text-sm text-gray-600 dark:text-gray-300 ml-1">%</span>
             </form>
@@ -495,21 +480,21 @@ export function DocumentViewerPage() {
 
         {/* Content - Full screen width and height minus header */}
         <div 
-          className="bg-gray-100 dark:bg-dark-bg flex items-center justify-center transition-colors duration-200 relative overflow-hidden"
+          className="bg-gray-100 dark:bg-dark-bg flex items-center justify-center transition-colors duration-200 relative overflow-auto"
           style={{ 
             height: `calc(100vh - ${headerHeight}px)`,
-            width: '100vw',
-            padding: '16px'
+            width: '100vw'
           }}
         >
           {document.file_type === 'pdf' && document.file_url ? (
             <>
               <div 
-                className="flex items-center justify-center w-full h-full overflow-auto"
+                className="flex items-center justify-center"
                 onWheel={handleScroll}
                 style={{
-                  maxWidth: '100%',
-                  maxHeight: '100%'
+                  transform: `scale(${scale})`,
+                  transformOrigin: 'center center',
+                  transition: 'transform 0.2s ease-in-out'
                 }}
               >
                 <PDFDocument
@@ -529,10 +514,9 @@ export function DocumentViewerPage() {
                 >
                   <Page
                     pageNumber={pageNumber}
-                    scale={scale}
+                    scale={1.0}
                     renderTextLayer={true}
                     renderAnnotationLayer={true}
-                    onLoadSuccess={onPageLoadSuccess}
                     className="shadow-lg"
                   />
                 </PDFDocument>
@@ -579,7 +563,8 @@ export function DocumentViewerPage() {
               className="bg-white dark:bg-dark-card rounded-lg p-6 w-full h-full overflow-auto shadow-lg transition-colors duration-200"
               style={{
                 transform: `scale(${scale})`,
-                transformOrigin: 'center center',
+                transformOrigin: 'top left',
+                transition: 'transform 0.2s ease-in-out',
                 maxWidth: '100%',
                 maxHeight: '100%'
               }}
