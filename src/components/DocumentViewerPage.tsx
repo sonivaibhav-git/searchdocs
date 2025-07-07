@@ -33,13 +33,11 @@ export function DocumentViewerPage() {
   const [pageInput, setPageInput] = useState<string>('1')
   const [scale, setScale] = useState<number>(1.0)
   const [zoomInput, setZoomInput] = useState<string>('100')
-  const [isFullscreen, setIsFullscreen] = useState(false)
   const [downloading, setDownloading] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
   const [showDropdown, setShowDropdown] = useState(false)
   const [showDocDetails, setShowDocDetails] = useState(false)
   const [isFavorited, setIsFavorited] = useState(false)
-  const [pageDimensions, setPageDimensions] = useState({ width: 0, height: 0 })
   const [headerHeight, setHeaderHeight] = useState(120) // Default header height
 
   useEffect(() => {
@@ -165,50 +163,37 @@ export function DocumentViewerPage() {
     setNumPages(numPages)
   }
 
-  const onPageLoadSuccess = (page: any) => {
-    const { width, height } = page.getViewport({ scale: 1 })
-    setPageDimensions({ width, height })
+  const onPageLoadSuccess = () => {
+    // Set initial scale to fit screen width
+    const screenWidth = window.innerWidth - 64 // Account for padding
+    const screenHeight = window.innerHeight - headerHeight - 64 // Account for header and padding
     
-    // Calculate scale to fit screen dimensions
-    const screenWidth = window.innerWidth - 32 // Account for minimal padding
-    const screenHeight = window.innerHeight - headerHeight - 32 // Account for header and minimal padding
-    
-    const scaleX = screenWidth / width
-    const scaleY = screenHeight / height
-    const optimalScale = Math.min(scaleX, scaleY) // Fit to screen
-    
-    setScale(optimalScale)
-    setZoomInput(Math.round(optimalScale * 100).toString())
+    // Start with a reasonable scale that fits most screens
+    const initialScale = Math.min(screenWidth / 800, screenHeight / 1000, 1.2)
+    setScale(initialScale)
+    setZoomInput(Math.round(initialScale * 100).toString())
   }
 
   const handleZoomIn = () => {
-    const newScale = Math.min(scale + 0.25, 5.0)
+    const newScale = Math.min(scale * 1.25, 5.0) // Increase by 25%
     setScale(newScale)
     setZoomInput(Math.round(newScale * 100).toString())
   }
   
   const handleZoomOut = () => {
-    const newScale = Math.max(scale - 0.25, 0.25)
+    const newScale = Math.max(scale * 0.8, 0.25) // Decrease by 20%
     setScale(newScale)
     setZoomInput(Math.round(newScale * 100).toString())
   }
 
   const resetZoom = () => {
-    // Reset to screen-fit zoom
-    if (pageDimensions.width && pageDimensions.height) {
-      const screenWidth = window.innerWidth - 32
-      const screenHeight = window.innerHeight - headerHeight - 32
-      
-      const scaleX = screenWidth / pageDimensions.width
-      const scaleY = screenHeight / pageDimensions.height
-      const optimalScale = Math.min(scaleX, scaleY)
-      
-      setScale(optimalScale)
-      setZoomInput(Math.round(optimalScale * 100).toString())
-    } else {
-      setScale(1.0)
-      setZoomInput('100')
-    }
+    // Reset to fit screen
+    const screenWidth = window.innerWidth - 64
+    const screenHeight = window.innerHeight - headerHeight - 64
+    const fitScale = Math.min(screenWidth / 800, screenHeight / 1000, 1.2)
+    
+    setScale(fitScale)
+    setZoomInput(Math.round(fitScale * 100).toString())
   }
 
   const handleZoomInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -247,51 +232,6 @@ export function DocumentViewerPage() {
   const handlePageInputBlur = () => {
     handlePageInputSubmit({ preventDefault: () => {} } as React.FormEvent)
   }
-
-  const toggleFullscreen = () => {
-    if (!isFullscreen) {
-      const element = document.documentElement
-      if (element.requestFullscreen) {
-        element.requestFullscreen()
-      } else if ((element as any).webkitRequestFullscreen) {
-        (element as any).webkitRequestFullscreen()
-      } else if ((element as any).msRequestFullscreen) {
-        (element as any).msRequestFullscreen()
-      }
-    } else {
-      if (document.exitFullscreen) {
-        document.exitFullscreen()
-      } else if ((document as any).webkitExitFullscreen) {
-        (document as any).webkitExitFullscreen()
-      } else if ((document as any).msExitFullscreen) {
-        (document as any).msExitFullscreen()
-      }
-    }
-    setIsFullscreen(!isFullscreen)
-  }
-
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      const isCurrentlyFullscreen = !!(
-        document.fullscreenElement ||
-        (document as any).webkitFullscreenElement ||
-        (document as any).msFullscreenElement
-      )
-      setIsFullscreen(isCurrentlyFullscreen)
-    }
-
-    if (typeof document !== 'undefined' && document.addEventListener) {
-      document.addEventListener('fullscreenchange', handleFullscreenChange)
-      document.addEventListener('webkitfullscreenchange', handleFullscreenChange)
-      document.addEventListener('msfullscreenchange', handleFullscreenChange)
-
-      return () => {
-        document.removeEventListener('fullscreenchange', handleFullscreenChange)
-        document.removeEventListener('webkitfullscreenchange', handleFullscreenChange)
-        document.removeEventListener('msfullscreenchange', handleFullscreenChange)
-      }
-    }
-  }, [])
 
   const goToPrevPage = () => {
     const newPage = Math.max(pageNumber - 1, 1)
@@ -550,30 +490,27 @@ export function DocumentViewerPage() {
             >
               <ZoomIn className="w-4 h-4" />
             </button>
-
-            <button
-              onClick={toggleFullscreen}
-              className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors"
-              title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-            >
-              <Expand className="w-4 h-4" />
-            </button>
           </div>
         </div>
 
         {/* Content - Full screen width and height minus header */}
         <div 
-          className="bg-gray-100 dark:bg-dark-bg flex items-center justify-center transition-colors duration-200 relative overflow-auto"
+          className="bg-gray-100 dark:bg-dark-bg flex items-center justify-center transition-colors duration-200 relative overflow-hidden"
           style={{ 
             height: `calc(100vh - ${headerHeight}px)`,
-            width: '100vw'
+            width: '100vw',
+            padding: '16px'
           }}
         >
           {document.file_type === 'pdf' && document.file_url ? (
             <>
               <div 
-                className="flex items-center justify-center w-full h-full"
+                className="flex items-center justify-center w-full h-full overflow-auto"
                 onWheel={handleScroll}
+                style={{
+                  maxWidth: '100%',
+                  maxHeight: '100%'
+                }}
               >
                 <PDFDocument
                   file={document.file_url}
@@ -596,6 +533,7 @@ export function DocumentViewerPage() {
                     renderTextLayer={true}
                     renderAnnotationLayer={true}
                     onLoadSuccess={onPageLoadSuccess}
+                    className="shadow-lg"
                   />
                 </PDFDocument>
               </div>
@@ -637,11 +575,18 @@ export function DocumentViewerPage() {
               )}
             </>
           ) : (
-            <div className="bg-white dark:bg-dark-card rounded-lg p-6 max-w-4xl w-full max-h-full overflow-auto shadow-lg transition-colors duration-200">
+            <div 
+              className="bg-white dark:bg-dark-card rounded-lg p-6 w-full h-full overflow-auto shadow-lg transition-colors duration-200"
+              style={{
+                transform: `scale(${scale})`,
+                transformOrigin: 'center center',
+                maxWidth: '100%',
+                maxHeight: '100%'
+              }}
+            >
               <h4 className="text-lg font-medium text-gray-900 dark:text-dark-text mb-4 border-b border-gray-200 dark:border-gray-600 pb-2">Extracted Text Content</h4>
               <div 
                 className="prose prose-sm max-w-none text-gray-700 dark:text-gray-300 leading-relaxed"
-                style={{ fontSize: `${scale * 0.875}rem` }}
               >
                 {document.content ? (
                   <pre className="whitespace-pre-wrap font-sans bg-gray-50 dark:bg-dark-search p-4 rounded border border-gray-200 dark:border-gray-600 overflow-auto transition-colors duration-200">
