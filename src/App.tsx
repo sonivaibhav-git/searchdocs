@@ -6,8 +6,8 @@ import { ToastProvider } from './components/Toast'
 import { AuthForm } from './components/AuthForm'
 import { Layout } from './components/Layout'
 import { SearchPage } from './components/SearchPage'
-import { UploadPage } from './components/UploadPage'
-import { DocumentsPage } from './components/DocumentsPage'
+import { EnhancedUploadPage } from './components/EnhancedUploadPage'
+import { EnhancedDocumentsPage } from './components/EnhancedDocumentsPage'
 import { FavoritesPage } from './components/FavoritesPage'
 import { DocumentViewerPage } from './components/DocumentViewerPage'
 
@@ -32,9 +32,9 @@ function AppContent() {
       case 'search':
         return <SearchPage />
       case 'upload':
-        return <UploadPage />
+        return <EnhancedUploadPage />
       case 'documents':
-        return <DocumentsPage />
+        return <EnhancedDocumentsPage />
       case 'favorites':
         return <FavoritesPage />
       default:
