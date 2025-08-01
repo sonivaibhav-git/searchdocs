@@ -532,7 +532,7 @@ export function EnhancedDocumentsPage() {
                     </div>
                   </div>
                 ))}
-              </div>
+              <span>Folder functionality coming soon</span>
             </div>
           )}
         </div>
