@@ -170,13 +170,13 @@ export function FolderTree({
   }
 
   const renderFolder = (folder: FolderTreeNode, level: number = 0) => {
-    const isExpanded = expandedFolders.has(folder.id)
-    const isSelected = selectedFolderId === folder.id
-    const isEditing = editingFolder === folder.id
-    const isCreating = creatingFolder === folder.id
+    const isExpanded = expandedFolders.has(folder.folder_id)
+    const isSelected = selectedFolderId === folder.folder_id
+    const isEditing = editingFolder === folder.folder_id
+    const isCreating = creatingFolder === folder.folder_id
 
     return (
-      <div key={folder.id} className="select-none">
+      <div key={folder.folder_id} className="select-none">
         <div
           className={`flex items-center space-x-2 py-2 px-3 rounded-md cursor-pointer transition-colors group ${
             isSelected 
@@ -184,16 +184,16 @@ export function FolderTree({
               : 'hover:bg-gray-100 dark:hover:bg-dark-search text-gray-700 dark:text-gray-300'
           }`}
           style={{ paddingLeft: `${level * 20 + 12}px` }}
-          onClick={() => !isEditing && onFolderSelect(folder.id)}
+          onClick={() => !isEditing && onFolderSelect(folder.folder_id)}
           onDragOver={handleDragOver}
-          onDrop={(e) => handleDrop(e, folder.id)}
+          onDrop={(e) => handleDrop(e, folder.folder_id)}
         >
           {/* Expand/Collapse Button */}
-          {folder.children.length > 0 && (
+          {folder.has_children && (
             <button
               onClick={(e) => {
                 e.stopPropagation()
-                toggleFolder(folder.id)
+                toggleFolder(folder.folder_id)
               }}
               className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
             >
@@ -256,7 +256,7 @@ export function FolderTree({
           ) : (
             <>
               <span className="flex-1 text-sm font-medium truncate">
-                {folder.name}
+                {folder.folder_name}
               </span>
               
               {/* Document Count */}
@@ -269,14 +269,14 @@ export function FolderTree({
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
-                    setShowDropdown(showDropdown === folder.id ? null : folder.id)
+                    setShowDropdown(showDropdown === folder.folder_id ? null : folder.folder_id)
                   }}
                   className="p-1 opacity-0 group-hover:opacity-100 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-opacity"
                 >
                   <MoreVertical className="w-4 h-4" />
                 </button>
 
-                {showDropdown === folder.id && (
+                {showDropdown === folder.folder_id && (
                   <>
                     <div 
                       className="fixed inset-0 z-40" 
@@ -286,7 +286,7 @@ export function FolderTree({
                       <button
                         onClick={(e) => {
                           e.stopPropagation()
-                          setCreatingFolder(folder.id)
+                          setCreatingFolder(folder.folder_id)
                           setShowDropdown(null)
                         }}
                         className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-search transition-colors"
@@ -298,8 +298,8 @@ export function FolderTree({
                       <button
                         onClick={(e) => {
                           e.stopPropagation()
-                          setEditingFolder(folder.id)
-                          setEditingName(folder.name)
+                          setEditingFolder(folder.folder_id)
+                          setEditingName(folder.folder_name)
                           setShowDropdown(null)
                         }}
                         className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-search transition-colors"
@@ -311,7 +311,7 @@ export function FolderTree({
                       <button
                         onClick={(e) => {
                           e.stopPropagation()
-                          handleDeleteFolder(folder.id, folder.name)
+                          handleDeleteFolder(folder.folder_id, folder.folder_name)
                           setShowDropdown(null)
                         }}
                         className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-red-600 dark:text-accent-warning hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
@@ -340,7 +340,7 @@ export function FolderTree({
               onChange={(e) => setNewFolderName(e.target.value)}
               onKeyPress={(e) => {
                 if (e.key === 'Enter') {
-                  handleCreateFolder(folder.id)
+                  handleCreateFolder(folder.folder_id)
                 } else if (e.key === 'Escape') {
                   setCreatingFolder(null)
                   setNewFolderName('')
@@ -351,7 +351,7 @@ export function FolderTree({
               autoFocus
             />
             <button
-              onClick={() => handleCreateFolder(folder.id)}
+              onClick={() => handleCreateFolder(folder.folder_id)}
               className="p-1 text-green-600 dark:text-accent-success hover:bg-green-100 dark:hover:bg-green-900/20 rounded"
             >
               <Check className="w-4 h-4" />
@@ -369,7 +369,7 @@ export function FolderTree({
         )}
 
         {/* Render Children */}
-        {isExpanded && folder.children && folder.children.map(child => 
+        {isExpanded && folder.children.map(child => 
           renderFolder(child, level + 1)
         )}
       </div>

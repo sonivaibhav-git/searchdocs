@@ -22,6 +22,7 @@ interface UploadFile {
 export function EnhancedUploadPage() {
   const [uploadFiles, setUploadFiles] = useState<UploadFile[]>([])
   const [selectedFolderId, setSelectedFolderId] = useState<string | undefined>()
+  const [showFolderSelector, setShowFolderSelector] = useState(false)
   const { user } = useAuth()
   const uploadToast = useUploadToast()
 
@@ -206,6 +207,7 @@ export function EnhancedUploadPage() {
           file_size: file.size,
           file_url: publicUrl,
           user_id: user?.id,
+          folder_id: uploadFile.folderId || null,
           is_public: false, // Default to private in folder system
           tags: uploadFile.tags,
           metadata: {
