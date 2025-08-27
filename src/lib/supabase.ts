@@ -1,5 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 
+// Declare supabase client at module level
+let supabase: any
+
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
@@ -41,9 +44,8 @@ Current status:
     }
   }
   
-  // Export the mock client to prevent app crashes
-  export const supabase = mockClient as any
-  export type { Document, UserProfile, DocumentWithProfile }
+  // Assign the mock client to prevent app crashes
+  supabase = mockClient as any
   
   // Stop execution here
   throw new Error('Supabase configuration required')
@@ -76,12 +78,11 @@ try {
     }
   }
   
-  export const supabase = mockClient as any
-  export type { Document, UserProfile, DocumentWithProfile }
+  supabase = mockClient as any
   throw new Error('Invalid Supabase URL format. Please check your VITE_SUPABASE_URL in .env file.')
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
@@ -96,6 +97,9 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     },
   },
 })
+
+// Export the supabase client
+export { supabase }
 
 // Log the configuration (without exposing sensitive data)
 console.log('Supabase configuration:')
