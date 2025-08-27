@@ -8,7 +8,7 @@ import { useAuth } from '../contexts/AuthContext'
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css'
 import 'react-pdf/dist/esm/Page/TextLayer.css'
 
-// Set up PDF.js worker
+// Set up PDF.js worker for faster loading
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`
 
 const formatFileSize = (bytes: number) => {
@@ -29,13 +29,19 @@ export function DocumentViewerPage() {
   const [numPages, setNumPages] = useState<number>(0)
   const [pageNumber, setPageNumber] = useState<number>(1)
   const [pageInput, setPageInput] = useState<string>('1')
+  
+  // Zoom functionality
   const [scale, setScale] = useState<number>(1.0)
   const [zoomInput, setZoomInput] = useState<string>('100')
+  
   const [downloading, setDownloading] = useState(false)
+  
+  // Search functionality
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<DocumentWithProfile[]>([])
   const [showSearchResults, setShowSearchResults] = useState(false)
   const [searchLoading, setSearchLoading] = useState(false)
+  
   const [headerHeight, setHeaderHeight] = useState(120)
 
   useEffect(() => {
@@ -109,14 +115,15 @@ export function DocumentViewerPage() {
     setNumPages(numPages)
   }
 
+  // Zoom functionality
   const handleZoomIn = () => {
-    const newScale = Math.min(scale + 0.25, 5.0)
+    const newScale = Math.min(scale * 1.25, 5.0)
     setScale(newScale)
     setZoomInput(Math.round(newScale * 100).toString())
   }
   
   const handleZoomOut = () => {
-    const newScale = Math.max(scale - 0.25, 0.25)
+    const newScale = Math.max(scale * 0.8, 0.25)
     setScale(newScale)
     setZoomInput(Math.round(newScale * 100).toString())
   }
@@ -145,6 +152,7 @@ export function DocumentViewerPage() {
     handleZoomInputSubmit({ preventDefault: () => {} } as React.FormEvent)
   }
 
+  // Page navigation
   const handlePageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPageInput(e.target.value)
   }
@@ -201,6 +209,7 @@ export function DocumentViewerPage() {
     }
   }
 
+  // Search functionality
   const handleSearch = async (e?: React.FormEvent) => {
     if (e) e.preventDefault()
     
@@ -212,6 +221,7 @@ export function DocumentViewerPage() {
     try {
       setSearchLoading(true)
       
+      // Search by title, content, and tags
       const { data, error } = await supabase
         .from('documents')
         .select(`
@@ -223,13 +233,37 @@ export function DocumentViewerPage() {
           )
         `)
         .eq('is_public', true)
-        .or(`title.ilike.%${searchQuery}%,content.ilike.%${searchQuery}%,tags.cs.{${searchQuery}}`)
+        .or(`title.ilike.%${searchQuery}%,content.ilike.%${searchQuery}%`)
         .order('created_at', { ascending: false })
         .limit(10)
 
       if (error) throw error
       
-      setSearchResults(data || [])
+      // Also search by tags
+      const { data: tagData, error: tagError } = await supabase
+        .from('documents')
+        .select(`
+          *,
+          user_profiles (
+            user_id,
+            username,
+            display_name
+          )
+        `)
+        .eq('is_public', true)
+        .contains('tags', [searchQuery])
+        .order('created_at', { ascending: false })
+        .limit(10)
+
+      if (tagError) throw tagError
+
+      // Combine and deduplicate results
+      const allResults = [...(data || []), ...(tagData || [])]
+      const uniqueResults = allResults.filter((doc, index, self) => 
+        index === self.findIndex(d => d.id === doc.id)
+      )
+      
+      setSearchResults(uniqueResults)
       setShowSearchResults(true)
     } catch (error) {
       console.error('Search error:', error)
@@ -345,7 +379,7 @@ export function DocumentViewerPage() {
                       className="fixed inset-0 z-40" 
                       onClick={() => setShowSearchResults(false)}
                     ></div>
-                    <div className="absolute right-0 mt-2 w-96 bg-white dark:bg-dark-card rounded-md shadow-lg border border-gray-200 dark:border-gray-600 py-2 z-50 max-h-96 overflow-y-auto">
+                    <div className="absolute right-0 mt-2 w-96 bg-white dark:bg-dark-card rounded-md shadow-lg border border-gray-200 dark:border-gray-600 py-2 z-50 max-h-96 overflow-y-auto transition-colors duration-200">
                       {searchResults.length === 0 ? (
                         <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
                           No documents found for "{searchQuery}"
@@ -423,7 +457,7 @@ export function DocumentViewerPage() {
         </div>
       </div>
 
-      {/* Viewer Controls */}
+      {/* Zoom Controls */}
       <div 
         data-document-controls
         className="bg-gray-100 dark:bg-dark-search border-b border-gray-200 dark:border-gray-600 px-4 py-2 transition-colors duration-200"
@@ -451,7 +485,7 @@ export function DocumentViewerPage() {
               value={zoomInput}
               onChange={handleZoomInputChange}
               onBlur={handleZoomInputBlur}
-              className="w-16 text-sm text-center bg-white dark:bg-dark-card text-gray-900 dark:text-dark-text px-2 py-1 rounded border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 dark:focus:ring-accent-primary focus:border-transparent"
+              className="w-16 text-sm text-center bg-white dark:bg-dark-card text-gray-900 dark:text-dark-text px-2 py-1 rounded border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 dark:focus:ring-accent-primary focus:border-transparent transition-colors"
               title="Enter zoom percentage (25-500%)"
             />
             <span className="text-sm text-gray-600 dark:text-gray-300 ml-1">%</span>
@@ -510,7 +544,7 @@ export function DocumentViewerPage() {
                   scale={1.0}
                   renderTextLayer={true}
                   renderAnnotationLayer={true}
-                  className="shadow-lg bg-white dark:bg-gray-800"
+                  className="shadow-lg bg-white dark:bg-gray-800 transition-colors duration-200"
                 />
               </PDFDocument>
             </div>
@@ -551,6 +585,22 @@ export function DocumentViewerPage() {
               </div>
             )}
           </>
+        ) : document.file_type === 'image' && document.file_url ? (
+          <div 
+            className="flex items-center justify-center p-4"
+            style={{
+              transform: `scale(${scale})`,
+              transformOrigin: 'center center',
+              transition: 'transform 0.3s ease-in-out'
+            }}
+          >
+            <img
+              src={document.file_url}
+              alt={document.title}
+              className="max-w-full max-h-full object-contain shadow-lg rounded-lg"
+              style={{ backgroundColor: 'white' }}
+            />
+          </div>
         ) : (
           <div 
             className="bg-white dark:bg-dark-card rounded-lg p-6 w-full max-w-4xl mx-4 shadow-lg transition-colors duration-200"
